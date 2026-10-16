@@ -1,11 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { Starship, ViewMode, ShipSize } from '../types/sensor';
+import { Starship, ViewMode, ShipSize, Faction } from '../types/sensor';
 import { soundManager } from '../utils/audio';
 import { tableSync, SyncPayload } from '../utils/sync';
 
 interface SensorContextType {
   totalMapTiles: number; // Total encounter tiles on sensor map (GM controlled)
-  playerSensorRange: number; // Player ship's max sensor range (GM controlled, 0 to 15)
+  playerSensorRange: number; // Player ship's current sensor range (GM controlled, 0 to 15)
+  defaultSensorRange: number; // Player ship's baseline/default sensor range (based on ship frame/tech)
+  setDefaultSensorRange: (range: number) => void;
+  resetSensorRangeToDefault: () => void;
   shipLevel: number; // Player starship level (1 to 20)
   setShipLevel: (level: number) => void;
   viewMode: ViewMode;
@@ -35,6 +38,7 @@ interface SensorContextType {
   flipShipHeading: (id: string) => void;
   toggleShipHidden: (id: string) => void;
   changeShipSize: (id: string, size: ShipSize) => void;
+  changeShipFaction: (id: string, faction: Faction) => void;
   resetEncounter: () => void;
   loadSampleEncounter: () => void;
   visibleShips: Starship[];
@@ -145,6 +149,20 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return DEFAULT_SENSOR_RANGE;
   });
 
+  // Player Ship's Baseline/Default Sensor Range (from ship frame & scanner specs)
+  const [defaultSensorRange, setDefaultSensorRangeState] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed.defaultSensorRange === 'number' && parsed.defaultSensorRange >= 0) {
+          return parsed.defaultSensorRange;
+        }
+      }
+    } catch (e) {}
+    return DEFAULT_SENSOR_RANGE;
+  });
+
   // Starship Level (1 to 20)
   const [shipLevel, setShipLevelState] = useState<number>(() => {
     try {
@@ -210,6 +228,9 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       tableSync.initClient(roomParam, (data: SyncPayload) => {
         setTotalMapTilesState(data.totalMapTiles);
         setPlayerSensorRangeState(data.playerSensorRange);
+        if (typeof data.defaultSensorRange === 'number') {
+          setDefaultSensorRangeState(data.defaultSensorRange);
+        }
         if (typeof data.shipLevel === 'number') {
           setShipLevelState(data.shipLevel);
         }
@@ -237,10 +258,11 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     tableSync.broadcastState({
       totalMapTiles,
       playerSensorRange,
+      defaultSensorRange,
       shipLevel,
       ships,
     });
-  }, [totalMapTiles, playerSensorRange, shipLevel, ships]);
+  }, [totalMapTiles, playerSensorRange, defaultSensorRange, shipLevel, ships]);
 
   // Sync to local storage
   useEffect(() => {
@@ -250,13 +272,14 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         JSON.stringify({
           totalMapTiles,
           playerSensorRange,
+          defaultSensorRange,
           shipLevel,
           gmPin,
           ships,
         })
       );
     } catch (e) {}
-  }, [totalMapTiles, playerSensorRange, shipLevel, gmPin, ships]);
+  }, [totalMapTiles, playerSensorRange, defaultSensorRange, shipLevel, gmPin, ships]);
 
   const toggleAudio = () => {
     const next = !audioEnabled;
@@ -315,6 +338,16 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const setPlayerSensorRange = (newRange: number) => {
     const clamped = Math.max(0, Math.min(15, newRange));
     setPlayerSensorRangeState(clamped);
+    soundManager.playBeep(840, 0.04);
+  };
+
+  const setDefaultSensorRange = (newRange: number) => {
+    const clamped = Math.max(0, Math.min(15, newRange));
+    setDefaultSensorRangeState(clamped);
+  };
+
+  const resetSensorRangeToDefault = () => {
+    setPlayerSensorRangeState(defaultSensorRange);
     soundManager.playBeep(840, 0.04);
   };
 
@@ -418,6 +451,11 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     soundManager.playBeep(780, 0.04);
   };
 
+  const changeShipFaction = (id: string, faction: Faction) => {
+    updateShip(id, { faction });
+    soundManager.playBeep(880, 0.04);
+  };
+
   const resetEncounter = () => {
     const center = Math.floor(totalMapTiles / 2);
     setShips([
@@ -481,6 +519,9 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       value={{
         totalMapTiles,
         playerSensorRange,
+        defaultSensorRange,
+        setDefaultSensorRange,
+        resetSensorRangeToDefault,
         shipLevel,
         setShipLevel,
         viewMode,
@@ -510,6 +551,7 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         flipShipHeading,
         toggleShipHidden,
         changeShipSize,
+        changeShipFaction,
         resetEncounter,
         loadSampleEncounter,
         visibleShips,

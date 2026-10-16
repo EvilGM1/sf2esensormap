@@ -38,6 +38,8 @@ export const Header: React.FC<HeaderProps> = ({
     setTotalMapTiles,
     playerSensorRange,
     setPlayerSensorRange,
+    defaultSensorRange,
+    resetSensorRangeToDefault,
     viewMode,
     setViewMode,
     isGmAuthenticated,
@@ -169,6 +171,16 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   +
                 </button>
+                {playerSensorRange !== defaultSensorRange && (
+                  <button
+                    onClick={resetSensorRangeToDefault}
+                    className="ml-1 px-1.5 py-0.5 rounded text-[10px] text-amber-400 hover:text-amber-300 bg-amber-950/40 hover:bg-amber-900/60 flex items-center gap-1 transition-colors border border-amber-500/40"
+                    title={`Reset back to default sensor range (${defaultSensorRange} Zones)`}
+                  >
+                    <RotateCcw className="w-2.5 h-2.5" />
+                    <span>Default ({defaultSensorRange})</span>
+                  </button>
+                )}
               </div>
             </div>
           ) : (
@@ -283,6 +295,18 @@ export const Header: React.FC<HeaderProps> = ({
                       </button>
                     ))}
                   </div>
+                  {playerSensorRange !== defaultSensorRange && (
+                    <button
+                      onClick={() => {
+                        resetSensorRangeToDefault();
+                        setShowConfigMenu(false);
+                      }}
+                      className="w-full mt-2 py-1 px-2 rounded bg-amber-950/40 border border-amber-500/40 text-amber-300 flex items-center justify-center gap-1.5 text-[11px] hover:bg-amber-900/50"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Reset to Default ({defaultSensorRange} Zones)</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* GM Total Map Tiles adjustment on mobile */}

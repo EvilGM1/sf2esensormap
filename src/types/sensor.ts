@@ -29,7 +29,8 @@ export interface Starship {
 
 export interface SensorConfig {
   totalMapTiles: number; // Total zones on encounter map (GM controlled)
-  playerSensorRange: number; // Sensor range of player ship (Player controlled)
+  playerSensorRange: number; // Sensor range of player ship (GM controlled)
+  defaultSensorRange?: number; // Player ship default baseline sensor range
   viewMode: ViewMode;
   gmPin: string;
 }

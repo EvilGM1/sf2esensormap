@@ -1,9 +1,10 @@
 # Starfinder 2e (SF2E) Tactical Sensor Map — System Specification
 
-> **Document Version:** 1.1.0  
+> **Document Version:** 1.2.0  
 > **Target Ruleset:** Starfinder Second Edition (*Starfinder Tech Core*, Page 170–185)  
 > **Reference Database:** [Archives of Nethys SF2E Tactical Starship Combat](https://2e.aonsrd.com/tactical-starship-combat/battle-stations)  
 > **Starship Frames Reference:** [Archives of Nethys SF2E Frames](https://2e.aonsrd.com/tactical-starship-combat/frames)  
+> **Starship Builder Reference:** [Archives of Nethys SF2E Starship Builder](https://2e.aonsrd.com/tactical-starship-combat/builder)  
 > **Repository:** [github.com/EvilGM1/sf2esensormap](https://github.com/EvilGM1/sf2esensormap)
 
 ---
@@ -19,7 +20,8 @@ Because most players and GMs at physical tables use mobile phones or tablets, th
 1. **Mobile-First Table Play**: Touch-optimized interface designed for phones and tablets resting on the table.
 2. **Scanner Simulation (Fog of War)**: Players only see what their sensors can detect; cloaked vessels and vessels beyond the ship's sensor range are masked. Absolute zone indices are hidden from players to keep total encounter size secret.
 3. **Strict Adherence to SF2E Rules**: Faithfully implements *Tech Core* starship movement constraints (forward-only thrust), size classes, headings, off-guard rear arcs, and official battle station tier-gated actions.
-4. **Zero-Configuration Table Sync**: Players scan a QR code from the GM's screen to connect their phones via real-time WebRTC data channels with zero server setup.
+4. **Role-Based Permissions**: Players exclusively pilot their own starship; enemy, allied, and neutral ships offer read-only sensor telemetry to prevent accidental or unauthorized repositioning.
+5. **Zero-Configuration Table Sync**: Players scan a QR code from the GM's screen to connect their phones via real-time WebRTC data channels with zero server setup.
 
 ---
 
@@ -27,8 +29,12 @@ Because most players and GMs at physical tables use mobile phones or tablets, th
 
 ### 2.1 Sensor Map Geometry & Zones
 - **Linear Track**: Space distance is represented as a contiguous sequence of discrete **Zones** (not traditional squares or feet). Distance between two ships equals the difference between their zone numbers.
-- **Total Map Zones (GM Input)**: The total size of the encounter space (typically 10 to 30 zones), configured and expanded by the GM.
-- **Player Sensor Range (GM Input, 0 to 15)**: The detection radius of the player starship's scanners. Can be reduced down to **0 zones** (simulating sensor blindness, critical glitch, or EMP). When 0, the player can only detect their own zone (`CORE 0`).
+- **Total Map Zones (GM Input)**: The total size of the encounter space (typically 10 to 40 zones), configured and dynamically expanded by the GM.
+- **Player Sensor Range (GM Controlled, 0 to 15)**: The detection radius of the player starship's scanners. Can be reduced down to **0 zones** (simulating sensor blindness, critical glitch, or EMP). When 0, the player can only detect their own zone (`CORE 0`).
+- **Baseline Sensor Range & Reset to Default**:
+  - The player starship's frame and scanner suite establish a **Default Sensor Range** (e.g. 4 zones).
+  - The GM can adjust the active sensor range at any moment to reflect electronic warfare, nebula interference, or glitch conditions.
+  - A dedicated **Reset to Default** button allows the GM to immediately restore scanners back to the player ship's baseline range.
 - **Player View Zone Filtering & Privacy**: 
   - In Player View, only zones within `[PlayerZone - SensorRange, PlayerZone + SensorRange]` are displayed.
   - The absolute zone index (`Zone X` or `Sq X`) is **completely hidden** from player view to keep encounter scope secret.
@@ -41,11 +47,14 @@ Because most players and GMs at physical tables use mobile phones or tablets, th
   - **Token**: High-tech chevron vector graphic.
   - **Size**: **Medium** (Standard in RAW Starfinder 2e).
 - **NPC Starships**:
-  - **Tokens**: Tactical directional triangles.
-  - **IFF Faction Colors**:
-    - 🟢 **Ally** (Green - `#22c55e`)
-    - 🔴 **Enemy** (Red - `#ef4444`)
-    - 🟡 **Neutral** (Yellow - `#eab308`)
+  - **Tokens**: Tactical directional triangles with scaled pixel dimensions.
+  - **Dynamic Faction & Color Reassignment (GM Control)**:
+    - The GM can change any vessel's faction on the fly via the Ship Drawer:
+      - 🟢 **Ally** (Green - `#22c55e`)
+      - 🔴 **Enemy** (Red - `#ef4444`)
+      - 🟡 **Neutral** (Yellow - `#eab308`)
+      - 🔵 **Player** (Sky Blue - `#38bdf8`)
+    - Color coding and token graphics update immediately across all connected player devices.
 - **Starship Size Classes**:
   1. `Tiny` — Drones, small probes (20×20 px)
   2. `Small` — Interceptors, light fighters (28×28 px)
@@ -54,7 +63,6 @@ Because most players and GMs at physical tables use mobile phones or tablets, th
   5. `Huge` — Cruisers, heavy frigates (62×62 px)
   6. `Gargantuan` — Battleships, destroyers (76×76 px)
   7. `Colossal` — Dreadnoughts, carriers, space stations (92×92 px)
-  *(Size tags like `[MED]` or `[LRG]` are omitted from token labels; token dimensions communicate size).*
 - **Multi-Ship Clustering**: Zones dynamically arrange multiple vessels into non-overlapping clusters (2-column grids when 3+ ships occupy a single zone).
 
 ### 2.3 Headings & Forward-Only Movement
@@ -63,7 +71,15 @@ Because most players and GMs at physical tables use mobile phones or tablets, th
 - **Boost Thrusters (Forward Movement)**: Starships cannot fly backwards! A ship moves forward in the direction of its current heading up to its Speed.
 - **Change Heading (Turn)**: Flips heading between Left ◄ and Right ► (clears *Off-Kilter*).
 
-### 2.4 Scanner Stealth & Cloaking
+### 2.4 Control Permissions & View Separation
+- **Player View Restrictions**:
+  - **Player Starship**: Players have full flight controls for their vessel (*Change Heading*, *Boost Thrusters*).
+  - **Non-Player Contacts**: Tapping an enemy, allied, or neutral ship displays a **Read-Only Tactical Contact Analysis** card (relative range, facing direction, and tactical rear flank vulnerability). Maneuver controls, heading flips, and jump-to-zone selectors are disabled for non-player ships.
+  - **Console Layout**: The GM Target Roster is replaced in Player View by a dedicated **Player Starship Console** showing ship heading, active sensor status, contact count, tactical off-guard warning, and quick battle station access.
+- **GM Mode**:
+  - The GM maintains full encounter control: arbitrary repositioning, jump to zone, heading flip, cloak toggle, size adjustment, faction reassignment, and target roster management.
+
+### 2.5 Scanner Stealth & Cloaking
 - GM can flag any ship as `hidden: true` (Cloaked / Undetected).
 - **GM Mode**: Cloaked vessels appear translucent with a purple stealth badge so the GM can track movements.
 - **Player Mode**: Cloaked vessels vanish completely from the sensor map until revealed by active scanner actions (e.g., *Seek Starships*).
@@ -116,19 +132,29 @@ Battle stations scale across grades (**Commercial Level 1**, **Tactical Level 2*
 ## 4. Planned Future Features & Roadmap
 
 ### 4.1 Starship Character Sheet & Frame Console Integration
-To transform the app into an all-in-one Starship Companion, the next major release will integrate an authentic **Starship Console Character Sheet**:
-- **Frame Selection**:
-  1. **Bulwark**: Heavy defense, reinforced hull, ramming prow, high HP, lower Speed.
-  2. **Explorer**: Balanced, superior sensor range, strong shield generation, versatile bays.
-  3. **Skirmisher**: Fast, high mobility, superior Speed, lighter hull.
-- **Automated Stat Calculation**:
-  - Automatically calculates Speed, Armor Class (AC), Reflex DC, Hull Points (HP), and Shield Points (SP) based on chosen **Frame** and **Ship Level (1–20)**.
-- **Interactive Battle Station Console Layout**:
-  - Displays the 6 battle station slots (2 default frame stations + 4 customizable slots).
-  - Shows equipped station upgrades and expansion bays.
-  - Interactive HP and SP damage/repair trackers.
-- **Party Battle Station Manning**:
-  - Players assign their character token to a specific battle station on the ship sheet, automatically unlocking their station actions on their personal phone console.
+To transform the app into an all-in-one Starship Companion, future releases will integrate a comprehensive **Starship Character Sheet & Interactive Console**:
+
+1. **Official Frame Selection ([Archives of Nethys Frames](https://2e.aonsrd.com/tactical-starship-combat/frames))**:
+   - Support for official Starfinder 2e frames:
+     - **Bulwark**: Heavy defense, reinforced hull, ramming prow, high HP, lower Speed.
+     - **Explorer**: Balanced, superior sensor range, strong shield generation, versatile expansion bays.
+     - **Skirmisher**: Fast, high mobility, superior Speed, lighter armor.
+     - Additional size frames: Shuttle, Light Interceptor, Heavy Fighter, Corvette, Armed Transport, Cruiser, Battleship, Dreadnought.
+2. **Interactive Builder System ([Archives of Nethys Shipbuilder](https://2e.aonsrd.com/tactical-starship-combat/builder))**:
+   - Player-facing Shipbuilder module directly in the app.
+   - Selecting a Frame + Level automatically computes:
+     - **Speed** (number of zones moved per Boost Thrusters)
+     - **Armor Class (AC)** & **Reflex DC**
+     - **Hull Points (HP)** & **Shield Points (SP)**
+     - **Base Sensor Range**: Automatically initializes the player ship's baseline sensor range on the tactical track (GM override supported with Reset to Default).
+     - **Expansion Bays & Upgrades**: Dedicated bays for specialized scanners, cargo, weapons, medical bays, or drone hangars.
+3. **Cockpit HUD Character Sheet**:
+   - Replaces traditional paper sheets with a live starship telemetry console.
+   - Live HP and SP damage/shield generators with clickable repair and shield recharge buttons.
+   - Weapon mount cards displaying ranges (in zones), damage dice, and attack action shortcuts.
+4. **Crew Manning & Tactical Station Assignments**:
+   - Individual players claim specific battle stations (Pilot, Gunnery, Scanners, Generator, Drone, Magic Conduit).
+   - Once manned, the player's personal mobile interface presents custom buttons matching their station's actions for that combat turn.
 
 ### 4.2 Automated Station Skill Rollers
 - Integrated dice roller for *Seek Starships*, *Evade*, *Generate Shields*, and *Target Lock* pulling from the crew member's skill proficiencies.

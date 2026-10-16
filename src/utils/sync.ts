@@ -4,6 +4,7 @@ import { Starship } from '../types/sensor';
 export interface SyncPayload {
   totalMapTiles: number;
   playerSensorRange: number;
+  defaultSensorRange?: number;
   shipLevel: number;
   ships: Starship[];
 }
