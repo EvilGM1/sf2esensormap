@@ -78,6 +78,9 @@ export const Header: React.FC<HeaderProps> = ({
               <h1 className="font-extrabold text-xs sm:text-base tracking-wider text-slate-100 font-mono">
                 SF2E SENSOR MAP
               </h1>
+              <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-950/90 text-emerald-300 border border-emerald-500/50 font-bold tracking-wider shadow-sm">
+                v1.0 UAT
+              </span>
               <span className="hidden sm:inline-block text-[9px] uppercase font-mono px-1.5 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
                 Room: {roomId}
               </span>
