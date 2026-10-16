@@ -6,23 +6,30 @@ export type ShipSize = 'tiny' | 'small' | 'medium' | 'large' | 'huge' | 'gargant
 
 export type ViewMode = 'gm' | 'player';
 
+export type BattleStationType =
+  | 'pilot'
+  | 'gunnery'
+  | 'generator'
+  | 'scanners'
+  | 'drone'
+  | 'magic';
+
 export interface Starship {
   id: string;
   name: string;
   faction: Faction;
   size: ShipSize;
-  square: number; // 0 to maxRange - 1
+  square: number; // 0 to totalMapTiles - 1
   heading: Heading;
-  hidden: boolean; // Scanner simulation: hidden from player view
+  hidden: boolean; // Scanner simulation: cloaked from player view
   notes?: string;
   hullPoints?: number;
   maxHullPoints?: number;
 }
 
 export interface SensorConfig {
-  sensorRange: number; // Number of zones/squares on map
+  totalMapTiles: number; // Total zones on encounter map (GM controlled)
+  playerSensorRange: number; // Sensor range of player ship (Player controlled)
   viewMode: ViewMode;
   gmPin: string;
 }
-
-export type BattleStationRole = 'pilot' | 'gunner' | 'engineer' | 'science' | 'captain';

@@ -24,7 +24,7 @@ export const ShipDrawer: React.FC = () => {
     toggleShipHidden,
     changeShipSize,
     removeShip,
-    sensorRange,
+    totalMapTiles,
     viewMode,
   } = useSensor();
 
@@ -115,10 +115,10 @@ export const ShipDrawer: React.FC = () => {
           {/* Nudge Right Button */}
           <button
             onClick={() => nudgeShip(selectedShip.id, 'right')}
-            disabled={selectedShip.square >= sensorRange - 1}
+            disabled={selectedShip.square >= totalMapTiles - 1}
             className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-void-800 hover:bg-void-700 disabled:opacity-40 disabled:hover:bg-void-800 border border-slate-700 text-slate-200 font-mono text-sm transition-all active:scale-95 shadow"
           >
-            <span>Move Right (Sq {Math.min(sensorRange - 1, selectedShip.square + 1)})</span>
+            <span>Move Right (Sq {Math.min(totalMapTiles - 1, selectedShip.square + 1)})</span>
             <ArrowRight className="w-4 h-4 text-slate-400" />
           </button>
 
@@ -186,7 +186,7 @@ export const ShipDrawer: React.FC = () => {
               onChange={(e) => moveShip(selectedShip.id, parseInt(e.target.value, 10))}
               className="bg-void-950 border border-slate-700 text-slate-200 text-xs rounded px-2.5 py-1 font-mono focus:outline-none focus:border-cyan-500"
             >
-              {Array.from({ length: sensorRange }, (_, i) => (
+              {Array.from({ length: totalMapTiles }, (_, i) => (
                 <option key={i} value={i}>
                   Zone {i} {i === selectedShip.square ? '(Current)' : ''}
                 </option>

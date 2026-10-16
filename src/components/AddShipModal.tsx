@@ -9,12 +9,12 @@ interface AddShipModalProps {
 }
 
 export const AddShipModal: React.FC<AddShipModalProps> = ({ isOpen, onClose }) => {
-  const { addShip, sensorRange } = useSensor();
+  const { addShip, totalMapTiles } = useSensor();
 
   const [name, setName] = useState('');
   const [faction, setFaction] = useState<Faction>('enemy');
   const [size, setSize] = useState<ShipSize>('medium');
-  const [square, setSquare] = useState<number>(Math.floor(sensorRange / 2) + 2);
+  const [square, setSquare] = useState<number>(Math.floor(totalMapTiles / 2) + 2);
   const [heading, setHeading] = useState<Heading>('left');
   const [hidden, setHidden] = useState<boolean>(false);
 
@@ -220,14 +220,14 @@ export const AddShipModal: React.FC<AddShipModalProps> = ({ isOpen, onClose }) =
 
             <div>
               <label className="block text-xs font-mono text-slate-400 mb-1">
-                Starting Zone (0 - {sensorRange - 1})
+                Starting Zone (0 - {totalMapTiles - 1})
               </label>
               <select
                 value={square}
                 onChange={(e) => setSquare(parseInt(e.target.value, 10))}
                 className="w-full py-2 px-3 bg-void-950 border border-slate-700 rounded-lg text-slate-200 font-mono text-xs focus:outline-none focus:border-cyan-500"
               >
-                {Array.from({ length: sensorRange }, (_, i) => (
+                {Array.from({ length: totalMapTiles }, (_, i) => (
                   <option key={i} value={i}>
                     Zone {i}
                   </option>

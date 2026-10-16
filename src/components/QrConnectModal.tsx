@@ -9,7 +9,7 @@ interface QrConnectModalProps {
 }
 
 export const QrConnectModal: React.FC<QrConnectModalProps> = ({ isOpen, onClose }) => {
-  const { gmPin } = useSensor();
+  const { gmPin, roomId } = useSensor();
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
   const [playerLockedUrl, setPlayerLockedUrl] = useState<string>('');
@@ -18,9 +18,12 @@ export const QrConnectModal: React.FC<QrConnectModalProps> = ({ isOpen, onClose 
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       url.searchParams.set('view', 'player');
+      if (roomId) {
+        url.searchParams.set('room', roomId);
+      }
       setPlayerLockedUrl(url.toString());
     }
-  }, [isOpen]);
+  }, [isOpen, roomId]);
 
   useEffect(() => {
     if (isOpen && playerLockedUrl) {

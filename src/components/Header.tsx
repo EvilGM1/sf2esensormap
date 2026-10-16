@@ -13,6 +13,8 @@ import {
   Volume2,
   VolumeX,
   Lock,
+  LockKeyhole,
+  Users,
   SlidersHorizontal,
 } from 'lucide-react';
 
@@ -32,11 +34,16 @@ export const Header: React.FC<HeaderProps> = ({
   onPromptGmPin,
 }) => {
   const {
-    sensorRange,
-    setSensorRange,
+    totalMapTiles,
+    setTotalMapTiles,
+    playerSensorRange,
+    setPlayerSensorRange,
     viewMode,
     setViewMode,
     isGmAuthenticated,
+    lockGmConsole,
+    roomId,
+    connectedPlayers,
     audioEnabled,
     toggleAudio,
     resetEncounter,
@@ -70,18 +77,25 @@ export const Header: React.FC<HeaderProps> = ({
                 SF2E SENSOR MAP
               </h1>
               <span className="hidden sm:inline-block text-[9px] uppercase font-mono px-1.5 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
-                1420.4 MHz
+                Room: {roomId}
               </span>
             </div>
             <p className="text-[9px] sm:text-[10px] text-slate-400 font-mono flex items-center gap-1.5">
               <span>SCANNER CORE ACTIVE</span>
-              <span className="w-1 h-1 rounded-full bg-emerald-400 inline-block" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse" />
+              {connectedPlayers > 0 && (
+                <span className="text-emerald-400 font-bold flex items-center gap-1 ml-1">
+                  <Users className="w-3 h-3" />
+                  <span>{connectedPlayers} Synced</span>
+                </span>
+              )}
             </p>
           </div>
         </div>
 
-        {/* Center: View Switcher (GM Mode with PIN lock vs Player View) */}
+        {/* Center: Controls for GM vs Player and Mode Switcher */}
         <div className="flex items-center gap-2">
+          {/* Mode Switcher */}
           <div className="flex items-center p-0.5 bg-void-900 border border-slate-800 rounded-lg">
             <button
               onClick={handleGmModeClick}
@@ -104,7 +118,7 @@ export const Header: React.FC<HeaderProps> = ({
                   ? 'bg-blue-600 text-white font-bold shadow'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
-              title="Player view: masked cloaked vessels"
+              title="Player view: only detected contacts are visible"
             >
               <Eye className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Player View</span>
@@ -112,32 +126,63 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* Stepper for Max Sensor Range in GM mode */}
-          {isGm && (
+          {/* GM Controlled Total Map Tiles */}
+          {isGm ? (
             <div className="hidden lg:flex items-center gap-1 bg-void-900 border border-slate-800 rounded-lg px-2 py-1 text-xs font-mono">
-              <span className="text-slate-400">Sensor Range:</span>
+              <span className="text-slate-400">Total Tiles:</span>
               <button
-                onClick={() => setSensorRange(sensorRange - 1)}
-                disabled={sensorRange <= 3}
+                onClick={() => setTotalMapTiles(totalMapTiles - 1)}
+                disabled={totalMapTiles <= 5}
                 className="w-5 h-5 flex items-center justify-center rounded bg-void-950 hover:bg-slate-800 disabled:opacity-40 text-slate-300 font-bold border border-slate-800"
               >
                 -
               </button>
-              <span className="font-bold text-cyan-400 px-1">{sensorRange}</span>
+              <span className="font-bold text-cyan-400 px-1">{totalMapTiles}</span>
               <button
-                onClick={() => setSensorRange(sensorRange + 1)}
-                disabled={sensorRange >= 30}
+                onClick={() => setTotalMapTiles(totalMapTiles + 1)}
+                disabled={totalMapTiles >= 40}
+                className="w-5 h-5 flex items-center justify-center rounded bg-void-950 hover:bg-slate-800 disabled:opacity-40 text-slate-300 font-bold border border-slate-800"
+              >
+                +
+              </button>
+            </div>
+          ) : (
+            /* Player Controlled Sensor Range */
+            <div className="hidden md:flex items-center gap-1 bg-void-900 border border-slate-800 rounded-lg px-2.5 py-1 text-xs font-mono">
+              <span className="text-slate-400">My Sensor Range:</span>
+              <button
+                onClick={() => setPlayerSensorRange(playerSensorRange - 1)}
+                disabled={playerSensorRange <= 1}
+                className="w-5 h-5 flex items-center justify-center rounded bg-void-950 hover:bg-slate-800 disabled:opacity-40 text-slate-300 font-bold border border-slate-800"
+              >
+                -
+              </button>
+              <span className="font-bold text-sky-400 px-1">{playerSensorRange}</span>
+              <button
+                onClick={() => setPlayerSensorRange(playerSensorRange + 1)}
+                disabled={playerSensorRange >= 15}
                 className="w-5 h-5 flex items-center justify-center rounded bg-void-950 hover:bg-slate-800 disabled:opacity-40 text-slate-300 font-bold border border-slate-800"
               >
                 +
               </button>
             </div>
           )}
+
+          {/* Lock GM Console button if currently authenticated */}
+          {isGm && isGmAuthenticated && (
+            <button
+              onClick={lockGmConsole}
+              className="p-1.5 rounded-lg bg-void-900 hover:bg-rose-950/40 border border-slate-800 hover:border-rose-500/50 text-slate-400 hover:text-rose-400 transition-colors"
+              title="Lock GM Console (Switch to Player View)"
+            >
+              <LockKeyhole className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Right: Quick Action Buttons */}
         <div className="flex items-center gap-1 sm:gap-1.5">
-          {/* Audio Synthesizer Beeps Toggle */}
+          {/* Audio Beeps Toggle */}
           <button
             onClick={toggleAudio}
             className={`p-1.5 rounded-lg border transition-colors ${
@@ -175,7 +220,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={onOpenQr}
             className="p-1.5 rounded-lg bg-void-900 hover:bg-void-800 border border-slate-800 text-slate-300 hover:text-white transition-colors"
-            title="Table Connect (QR Code & Link)"
+            title="Table Connect (QR Code & Live Sync)"
           >
             <QrCode className="w-4 h-4 text-cyan-400" />
           </button>
@@ -200,24 +245,24 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             {showConfigMenu && (
-              <div className="absolute right-0 mt-2 w-56 rounded-xl bg-void-900 border border-slate-700 shadow-2xl p-2 z-50 text-xs font-mono">
+              <div className="absolute right-0 mt-2 w-60 rounded-xl bg-void-900 border border-slate-700 shadow-2xl p-2 z-50 text-xs font-mono">
                 {/* Mobile Sensor Range adjustment */}
-                <div className="p-2 border-b border-slate-800 lg:hidden">
+                <div className="p-2 border-b border-slate-800 md:hidden">
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-slate-400">Sensor Range:</span>
-                    <span className="font-bold text-cyan-400">{sensorRange}</span>
+                    <span className="text-slate-400">My Sensor Range:</span>
+                    <span className="font-bold text-sky-400">{playerSensorRange}</span>
                   </div>
                   <div className="flex gap-1 justify-between">
-                    {[5, 7, 9, 11, 15].map((preset) => (
+                    {[2, 3, 4, 5, 6].map((preset) => (
                       <button
                         key={preset}
                         onClick={() => {
-                          setSensorRange(preset);
+                          setPlayerSensorRange(preset);
                           setShowConfigMenu(false);
                         }}
                         className={`flex-1 py-1 rounded text-center border ${
-                          sensorRange === preset
-                            ? 'bg-cyan-950 border-cyan-500 text-cyan-300 font-bold'
+                          playerSensorRange === preset
+                            ? 'bg-sky-950 border-sky-500 text-sky-300 font-bold'
                             : 'bg-void-950 border-slate-800 text-slate-400'
                         }`}
                       >
@@ -226,6 +271,34 @@ export const Header: React.FC<HeaderProps> = ({
                     ))}
                   </div>
                 </div>
+
+                {/* GM Total Map Tiles adjustment on mobile */}
+                {isGm && (
+                  <div className="p-2 border-b border-slate-800 lg:hidden">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-slate-400">Total Map Tiles:</span>
+                      <span className="font-bold text-cyan-400">{totalMapTiles}</span>
+                    </div>
+                    <div className="flex gap-1 justify-between">
+                      {[10, 15, 20, 25].map((preset) => (
+                        <button
+                          key={preset}
+                          onClick={() => {
+                            setTotalMapTiles(preset);
+                            setShowConfigMenu(false);
+                          }}
+                          className={`flex-1 py-1 rounded text-center border ${
+                            totalMapTiles === preset
+                              ? 'bg-cyan-950 border-cyan-500 text-cyan-300 font-bold'
+                              : 'bg-void-950 border-slate-800 text-slate-400'
+                          }`}
+                        >
+                          {preset}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="p-1">
                   <button

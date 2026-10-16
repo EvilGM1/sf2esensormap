@@ -1,22 +1,28 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { Starship, ViewMode, ShipSize } from '../types/sensor';
 import { soundManager } from '../utils/audio';
+import { tableSync, SyncPayload } from '../utils/sync';
 
 interface SensorContextType {
-  sensorRange: number;
+  totalMapTiles: number; // Total encounter tiles on sensor map (GM controlled)
+  playerSensorRange: number; // Player ship's max sensor range (Player controlled)
   viewMode: ViewMode;
   gmPin: string;
   isGmAuthenticated: boolean;
+  roomId: string;
+  connectedPlayers: number;
   ships: Starship[];
   selectedShip: Starship | null;
   selectedShipId: string | null;
   playerShip: Starship | null;
   audioEnabled: boolean;
   toggleAudio: () => void;
-  setSensorRange: (range: number) => void;
+  setTotalMapTiles: (tiles: number) => void;
+  setPlayerSensorRange: (range: number) => void;
   shiftTrack: (direction: 'left' | 'right') => void;
   setViewMode: (mode: ViewMode) => void;
   authenticateGm: (pin: string) => boolean;
+  lockGmConsole: () => void;
   setGmPin: (pin: string) => void;
   selectShip: (id: string | null) => void;
   addShip: (ship: Omit<Starship, 'id'>) => void;
@@ -30,21 +36,23 @@ interface SensorContextType {
   resetEncounter: () => void;
   loadSampleEncounter: () => void;
   visibleShips: Starship[];
+  activeZoneIndices: number[]; // Zones currently visible based on mode and sensor range
 }
 
-const STORAGE_KEY = 'sf2e_sensor_map_state_v2';
-const DEFAULT_RANGE = 9; // Odd number allows exact center zone (zone 4)
+const STORAGE_KEY = 'sf2e_sensor_map_state_v3';
+const DEFAULT_MAP_TILES = 15;
+const DEFAULT_SENSOR_RANGE = 4;
 const DEFAULT_PIN = '1234';
 
-const createDefaultEncounter = (range: number): Starship[] => {
-  const center = Math.floor(range / 2);
+const createDefaultEncounter = (totalTiles: number): Starship[] => {
+  const center = Math.floor(totalTiles / 2);
   return [
     {
       id: 'player-primary',
       name: 'Player Starship',
       faction: 'player',
-      size: 'medium',
-      square: center, // Spawned right in the middle!
+      size: 'medium', // In RAW SF2E player ships are Medium
+      square: center,
       heading: 'right',
       hidden: false,
     },
@@ -53,16 +61,25 @@ const createDefaultEncounter = (range: number): Starship[] => {
       name: 'Hostile Interceptor',
       faction: 'enemy',
       size: 'small',
-      square: Math.min(range - 1, center + 2),
+      square: Math.min(totalTiles - 1, center + 2),
       heading: 'left',
       hidden: false,
     },
     {
       id: 'npc-enemy-cruiser',
-      name: 'Cruiser (Cloaked)',
+      name: 'Heavy Cruiser',
       faction: 'enemy',
       size: 'huge',
-      square: Math.min(range - 1, center + 3),
+      square: Math.min(totalTiles - 1, center + 3),
+      heading: 'left',
+      hidden: false,
+    },
+    {
+      id: 'npc-enemy-cloaked',
+      name: 'Raider (Cloaked)',
+      faction: 'enemy',
+      size: 'medium',
+      square: Math.min(totalTiles - 1, center + 4),
       heading: 'left',
       hidden: true,
     },
@@ -81,17 +98,49 @@ const createDefaultEncounter = (range: number): Starship[] => {
 const SensorContext = createContext<SensorContextType | undefined>(undefined);
 
 export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [sensorRange, setSensorRangeState] = useState<number>(() => {
+  const [roomId] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const urlRoom = params.get('room');
+      if (urlRoom) return urlRoom;
+    }
+    const saved = localStorage.getItem('sf2e_room_id');
+    if (saved) return saved;
+    const newRoom = Math.random().toString(36).substring(2, 6).toUpperCase();
+    try {
+      localStorage.setItem('sf2e_room_id', newRoom);
+    } catch (e) {}
+    return newRoom;
+  });
+
+  const [connectedPlayers, setConnectedPlayers] = useState<number>(0);
+
+  // Total Tiles on Encounter Map (GM controlled)
+  const [totalMapTiles, setTotalMapTilesState] = useState<number>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (typeof parsed.sensorRange === 'number' && parsed.sensorRange >= 3) {
-          return parsed.sensorRange;
+        if (typeof parsed.totalMapTiles === 'number' && parsed.totalMapTiles >= 5) {
+          return parsed.totalMapTiles;
         }
       }
     } catch (e) {}
-    return DEFAULT_RANGE;
+    return DEFAULT_MAP_TILES;
+  });
+
+  // Player Ship's Sensor Range (Player controlled)
+  const [playerSensorRange, setPlayerSensorRangeState] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed.playerSensorRange === 'number' && parsed.playerSensorRange >= 1) {
+          return parsed.playerSensorRange;
+        }
+      }
+    } catch (e) {}
+    return DEFAULT_SENSOR_RANGE;
   });
 
   const [gmPin, setGmPinState] = useState<string>(() => {
@@ -105,32 +154,17 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return DEFAULT_PIN;
   });
 
-  // Check URL query param: if `?view=player`, force player mode!
+  // View Mode: Force 'player' if `?view=player` in URL!
   const [viewMode, setViewModeState] = useState<ViewMode>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('view') === 'player') return 'player';
     }
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.viewMode === 'gm' || parsed.viewMode === 'player') {
-          return parsed.viewMode;
-        }
-      }
-    } catch (e) {}
-    return 'gm';
+    return 'player'; // Safe default: start in Player View unless PIN is entered!
   });
 
-  const [isGmAuthenticated, setIsGmAuthenticated] = useState<boolean>(() => {
-    // If opened directly as GM without url query, default to authenticated on local machine
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('view') === 'player') return false;
-    }
-    return true;
-  });
+  // GM Authentication state: false by default until PIN is successfully entered
+  const [isGmAuthenticated, setIsGmAuthenticated] = useState<boolean>(false);
 
   const [ships, setShips] = useState<Starship[]>(() => {
     try {
@@ -138,33 +172,70 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed.ships)) {
-          return parsed.ships.map((s: Starship) => ({
-            ...s,
-            size: s.size || 'medium',
-          }));
+          return parsed.ships;
         }
       }
     } catch (e) {}
-    return createDefaultEncounter(DEFAULT_RANGE);
+    return createDefaultEncounter(DEFAULT_MAP_TILES);
   });
 
   const [selectedShipId, setSelectedShipId] = useState<string | null>(null);
   const [audioEnabled, setAudioEnabled] = useState<boolean>(false);
 
-  // Sync to storage
+  // Setup PeerJS Table Sync
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const isPlayerUrl = params.get('view') === 'player';
+    const roomParam = params.get('room');
+
+    if (isPlayerUrl && roomParam) {
+      // Player mode: connect to host room
+      tableSync.initClient(roomParam, (data: SyncPayload) => {
+        setTotalMapTilesState(data.totalMapTiles);
+        setPlayerSensorRangeState(data.playerSensorRange);
+        setShips(data.ships);
+      });
+    } else {
+      // GM Host: initialize room
+      tableSync.initHost(roomId, (count) => {
+        setConnectedPlayers(count);
+      });
+    }
+
+    return () => {
+      tableSync.cleanup();
+    };
+  }, [roomId]);
+
+  // Broadcast state changes if GM host
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    tableSync.broadcastState({
+      totalMapTiles,
+      playerSensorRange,
+      ships,
+    });
+  }, [totalMapTiles, playerSensorRange, ships]);
+
+  // Sync to local storage
   useEffect(() => {
     try {
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
-          sensorRange,
-          viewMode,
+          totalMapTiles,
+          playerSensorRange,
           gmPin,
           ships,
         })
       );
     } catch (e) {}
-  }, [sensorRange, viewMode, gmPin, ships]);
+  }, [totalMapTiles, playerSensorRange, gmPin, ships]);
 
   const toggleAudio = () => {
     const next = !audioEnabled;
@@ -184,6 +255,13 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return false;
   };
 
+  const lockGmConsole = () => {
+    setIsGmAuthenticated(false);
+    setViewModeState('player');
+    setSelectedShipId(null);
+    soundManager.playBeep(500, 0.08);
+  };
+
   const setViewMode = (mode: ViewMode) => {
     if (mode === 'player') {
       setViewModeState('player');
@@ -201,25 +279,30 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setGmPinState(pin);
   };
 
-  const setSensorRange = (newRange: number) => {
-    const clampedRange = Math.max(3, Math.min(30, newRange));
-    setSensorRangeState(clampedRange);
+  const setTotalMapTiles = (newTiles: number) => {
+    const clamped = Math.max(5, Math.min(40, newTiles));
+    setTotalMapTilesState(clamped);
     setShips((prev) =>
       prev.map((ship) => ({
         ...ship,
-        square: Math.min(ship.square, clampedRange - 1),
+        square: Math.min(ship.square, clamped - 1),
       }))
     );
     soundManager.playBeep(750, 0.04);
   };
 
-  // Shift entire map left or right (spawning/scrolling zones dynamically!)
+  const setPlayerSensorRange = (newRange: number) => {
+    const clamped = Math.max(1, Math.min(15, newRange));
+    setPlayerSensorRangeState(clamped);
+    soundManager.playBeep(840, 0.04);
+  };
+
   const shiftTrack = (direction: 'left' | 'right') => {
     soundManager.playBeep(600, 0.06);
     setShips((prev) =>
       prev.map((s) => {
         const delta = direction === 'left' ? -1 : 1;
-        const target = Math.max(0, Math.min(sensorRange - 1, s.square + delta));
+        const target = Math.max(0, Math.min(totalMapTiles - 1, s.square + delta));
         return { ...s, square: target };
       })
     );
@@ -232,10 +315,10 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const addShip = (newShip: Omit<Starship, 'id'>) => {
     const id = `ship-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-    const clampedSquare = Math.max(0, Math.min(sensorRange - 1, newShip.square));
+    const clampedSquare = Math.max(0, Math.min(totalMapTiles - 1, newShip.square));
     const created: Starship = {
       ...newShip,
-      size: newShip.size || 'medium',
+      size: newShip.faction === 'player' ? 'medium' : newShip.size || 'medium',
       id,
       square: clampedSquare,
     };
@@ -250,7 +333,7 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         if (s.id !== id) return s;
         const updated = { ...s, ...updates };
         if (typeof updated.square === 'number') {
-          updated.square = Math.max(0, Math.min(sensorRange - 1, updated.square));
+          updated.square = Math.max(0, Math.min(totalMapTiles - 1, updated.square));
         }
         return updated;
       })
@@ -266,7 +349,7 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const moveShip = (id: string, newSquare: number) => {
-    const clamped = Math.max(0, Math.min(sensorRange - 1, newSquare));
+    const clamped = Math.max(0, Math.min(totalMapTiles - 1, newSquare));
     updateShip(id, { square: clamped });
     soundManager.playBeep(920, 0.04);
   };
@@ -276,7 +359,7 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       prev.map((s) => {
         if (s.id !== id) return s;
         const delta = direction === 'left' ? -1 : 1;
-        const target = Math.max(0, Math.min(sensorRange - 1, s.square + delta));
+        const target = Math.max(0, Math.min(totalMapTiles - 1, s.square + delta));
         return { ...s, square: target };
       })
     );
@@ -309,14 +392,14 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const resetEncounter = () => {
-    const center = Math.floor(sensorRange / 2);
+    const center = Math.floor(totalMapTiles / 2);
     setShips([
       {
         id: `player-${Date.now()}`,
         name: 'Player Starship',
         faction: 'player',
         size: 'medium',
-        square: center, // Spawned right in center!
+        square: center,
         heading: 'right',
         hidden: false,
       },
@@ -326,38 +409,68 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const loadSampleEncounter = () => {
-    setShips(createDefaultEncounter(sensorRange));
+    setShips(createDefaultEncounter(totalMapTiles));
     setSelectedShipId(null);
     soundManager.playRadarPulse();
   };
 
+  const playerShip = ships.find((s) => s.faction === 'player') || null;
+  const playerSquare = playerShip ? playerShip.square : Math.floor(totalMapTiles / 2);
+
+  // Active zone indices:
+  // GM sees all zones: 0 to totalMapTiles - 1
+  // Player only sees zones within [playerSquare - playerSensorRange, playerSquare + playerSensorRange]
+  const activeZoneIndices = React.useMemo(() => {
+    if (viewMode === 'gm') {
+      return Array.from({ length: totalMapTiles }, (_, i) => i);
+    }
+    const minZone = Math.max(0, playerSquare - playerSensorRange);
+    const maxZone = Math.min(totalMapTiles - 1, playerSquare + playerSensorRange);
+    const indices: number[] = [];
+    for (let i = minZone; i <= maxZone; i++) {
+      indices.push(i);
+    }
+    return indices;
+  }, [viewMode, totalMapTiles, playerSquare, playerSensorRange]);
+
+  // Visible ships:
+  // In GM view: all ships are visible (with cloaked badges)
+  // In Player view:
+  // 1. Must NOT be cloaked (`!hidden`)
+  // 2. Must be within the player ship's sensor range!
   const visibleShips = ships.filter((ship) => {
     if (viewMode === 'player') {
-      return !ship.hidden;
+      if (ship.hidden) return false;
+      const dist = Math.abs(ship.square - playerSquare);
+      if (dist > playerSensorRange) return false;
     }
     return true;
   });
 
   const selectedShip = ships.find((s) => s.id === selectedShipId) || null;
-  const playerShip = ships.find((s) => s.faction === 'player') || null;
 
   return (
     <SensorContext.Provider
       value={{
-        sensorRange,
+        totalMapTiles,
+        playerSensorRange,
         viewMode,
         gmPin,
         isGmAuthenticated,
+        roomId,
+        connectedPlayers,
         ships,
         selectedShip,
         selectedShipId,
         playerShip,
         audioEnabled,
         toggleAudio,
-        setSensorRange,
+        setTotalMapTiles,
+        setPlayerSensorRange,
         shiftTrack,
         setViewMode,
         authenticateGm,
+        lockGmConsole,
         setGmPin,
         selectShip,
         addShip,
@@ -371,6 +484,7 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         resetEncounter,
         loadSampleEncounter,
         visibleShips,
+        activeZoneIndices,
       }}
     >
       {children}

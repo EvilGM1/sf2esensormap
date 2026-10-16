@@ -18,13 +18,14 @@ export const ShipToken: React.FC<ShipTokenProps> = ({
   onClick,
 }) => {
   const isFacingRight = ship.heading === 'right';
+  const isPlayer = ship.faction === 'player';
 
-  // Faction color tokens
+  // Faction colors
   const getFactionColors = () => {
     switch (ship.faction) {
       case 'player':
         return {
-          fill: '#38bdf8', // Blue
+          fill: '#38bdf8', // Player Blue
           stroke: '#bae6fd',
           glow: 'rgba(56, 189, 248, 0.45)',
           badgeBg: 'bg-sky-500/20 text-sky-300 border-sky-500/40',
@@ -53,50 +54,75 @@ export const ShipToken: React.FC<ShipTokenProps> = ({
     }
   };
 
-  // Dimensional scaling based on ship size (Tiny to Colossal)
-  const getSizeStyles = (size: ShipSize = 'medium', isPlayer: boolean) => {
+  // Precise pixel dimensions for every size class
+  const getSizeConfig = (size: ShipSize = 'medium') => {
     switch (size) {
       case 'tiny':
         return {
-          dim: isPlayer ? 'w-8 h-6' : 'w-5 h-5',
+          npcW: 20,
+          npcH: 20,
+          playerW: 26,
+          playerH: 18,
           tag: 'TNY',
         };
       case 'small':
         return {
-          dim: isPlayer ? 'w-10 h-7' : 'w-7 h-7',
+          npcW: 28,
+          npcH: 28,
+          playerW: 36,
+          playerH: 26,
           tag: 'SML',
         };
       case 'medium':
         return {
-          dim: isPlayer ? 'w-13 h-9 sm:w-14 sm:h-10' : 'w-8 h-8 sm:w-9 sm:h-9',
+          npcW: 36,
+          npcH: 36,
+          playerW: 48,
+          playerH: 34,
           tag: 'MED',
         };
       case 'large':
         return {
-          dim: isPlayer ? 'w-16 h-11 sm:w-18 sm:h-12' : 'w-10 h-10 sm:w-12 sm:h-12',
+          npcW: 48,
+          npcH: 48,
+          playerW: 64,
+          playerH: 46,
           tag: 'LRG',
         };
       case 'huge':
         return {
-          dim: isPlayer ? 'w-20 h-14 sm:w-22 sm:h-15' : 'w-13 h-13 sm:w-15 sm:h-15',
+          npcW: 62,
+          npcH: 62,
+          playerW: 80,
+          playerH: 56,
           tag: 'HUG',
         };
       case 'gargantuan':
         return {
-          dim: isPlayer ? 'w-24 h-16 sm:w-26 sm:h-18' : 'w-16 h-16 sm:w-18 sm:h-18',
+          npcW: 76,
+          npcH: 76,
+          playerW: 98,
+          playerH: 70,
           tag: 'GAR',
         };
       case 'colossal':
         return {
-          dim: isPlayer ? 'w-28 h-20 sm:w-30 sm:h-22' : 'w-20 h-20 sm:w-22 sm:h-22',
+          npcW: 92,
+          npcH: 92,
+          playerW: 118,
+          playerH: 84,
           tag: 'COL',
         };
     }
   };
 
+  // In RAW SF2E player ships are Medium
+  const effectiveSize: ShipSize = isPlayer ? 'medium' : ship.size || 'medium';
+  const sizeConfig = getSizeConfig(effectiveSize);
   const colors = getFactionColors();
-  const isPlayer = ship.faction === 'player';
-  const sizeConfig = getSizeStyles(ship.size || 'medium', isPlayer);
+
+  const width = isPlayer ? sizeConfig.playerW : sizeConfig.npcW;
+  const height = isPlayer ? sizeConfig.playerH : sizeConfig.npcH;
 
   return (
     <div
@@ -105,25 +131,26 @@ export const ShipToken: React.FC<ShipTokenProps> = ({
       tabIndex={0}
       title={`${ship.name} [${sizeConfig.tag}] (${ship.faction.toUpperCase()}) - Facing ${ship.heading.toUpperCase()}${ship.hidden ? ' [CLOAKED]' : ''}`}
       className={`relative group cursor-pointer transition-all duration-200 flex flex-col items-center justify-center
-        ${compact ? 'p-1' : 'p-1.5'}
+        ${compact ? 'p-0.5' : 'p-1'}
         ${isSelected ? 'scale-105' : 'hover:scale-105 active:scale-95'}
-        ${ship.hidden ? (isGm ? 'opacity-65 border-dashed border border-purple-500/50 rounded-lg bg-purple-950/20' : 'hidden') : ''}
+        ${ship.hidden ? (isGm ? 'opacity-65 border-dashed border border-purple-500/60 rounded-lg bg-purple-950/20' : 'hidden') : ''}
       `}
     >
       {/* Selection halo */}
       {isSelected && (
-        <div 
+        <div
           className="absolute -inset-1 rounded-xl bg-cyan-400/20 border border-cyan-400/80 animate-pulse pointer-events-none"
           style={{ boxShadow: `0 0 14px ${colors.glow}` }}
         />
       )}
 
-      {/* SVG Ship Graphic */}
+      {/* SVG Ship Graphic with exact pixel dimensions */}
       <div className="relative flex items-center justify-center">
         {isPlayer ? (
           /* High-Tech Player Starship Chevron */
           <svg
-            className={`transition-all duration-200 drop-shadow-md ${sizeConfig.dim} ${
+            style={{ width: `${width}px`, height: `${height}px` }}
+            className={`transition-all duration-200 drop-shadow-md ${
               isFacingRight ? '' : 'rotate-180'
             }`}
             viewBox="0 0 48 36"
@@ -139,16 +166,8 @@ export const ShipToken: React.FC<ShipTokenProps> = ({
               strokeLinejoin="round"
             />
             {/* Wing Detail Panels */}
-            <path
-              d="M10 9L26 16L12 18Z"
-              fill="#0284c7"
-              opacity="0.8"
-            />
-            <path
-              d="M10 27L26 20L12 18Z"
-              fill="#0284c7"
-              opacity="0.8"
-            />
+            <path d="M10 9L26 16L12 18Z" fill="#0284c7" opacity="0.85" />
+            <path d="M10 27L26 20L12 18Z" fill="#0284c7" opacity="0.85" />
             {/* Cockpit Canopy */}
             <polygon
               points="16,18 29,18 23,13 16,14.5"
@@ -163,7 +182,8 @@ export const ShipToken: React.FC<ShipTokenProps> = ({
         ) : (
           /* NPC Starship Triangle */
           <svg
-            className={`transition-all duration-200 drop-shadow-md ${sizeConfig.dim} ${
+            style={{ width: `${width}px`, height: `${height}px` }}
+            className={`transition-all duration-200 drop-shadow-md ${
               isFacingRight ? '' : 'rotate-180'
             }`}
             viewBox="0 0 32 32"
@@ -179,10 +199,7 @@ export const ShipToken: React.FC<ShipTokenProps> = ({
               strokeLinejoin="round"
             />
             {/* Inner accent */}
-            <polygon
-              points="8,10 20,16 8,22 10,16"
-              fill="rgba(0,0,0,0.25)"
-            />
+            <polygon points="8,10 20,16 8,22 10,16" fill="rgba(0,0,0,0.25)" />
             {/* Center radar signature dot */}
             <circle cx="16" cy="16" r="2" fill="#ffffff" opacity="0.9" />
           </svg>
@@ -191,7 +208,7 @@ export const ShipToken: React.FC<ShipTokenProps> = ({
         {/* Cloaked stealth badge in GM mode */}
         {ship.hidden && isGm && (
           <div
-            className="absolute -top-1.5 -right-1.5 bg-purple-900 border border-purple-400 text-purple-200 rounded-full p-0.5 shadow"
+            className="absolute -top-1.5 -right-1.5 bg-purple-900 border border-purple-400 text-purple-200 rounded-full p-0.5 shadow z-10"
             title="Hidden from player scanners"
           >
             <EyeOff className="w-3 h-3 text-purple-300" />
@@ -200,13 +217,13 @@ export const ShipToken: React.FC<ShipTokenProps> = ({
       </div>
 
       {/* Label, Heading & Size Tag */}
-      <div className="flex items-center gap-1 mt-1 max-w-[95px] sm:max-w-[120px] pointer-events-none">
+      <div className="flex items-center gap-1 mt-1 max-w-[120px] pointer-events-none">
         <span
-          className={`text-[9px] sm:text-[11px] font-semibold truncate px-1 rounded border leading-tight flex items-center gap-1 ${colors.badgeBg}`}
+          className={`text-[9px] sm:text-[10px] font-semibold truncate px-1 rounded border leading-tight flex items-center gap-1 ${colors.badgeBg}`}
         >
           <span>{isFacingRight ? '►' : '◄'}</span>
           <span className="truncate">{ship.name}</span>
-          <span className="text-[8px] opacity-75 font-mono">[{sizeConfig.tag}]</span>
+          <span className="text-[8px] opacity-80 font-mono">[{sizeConfig.tag}]</span>
         </span>
       </div>
     </div>

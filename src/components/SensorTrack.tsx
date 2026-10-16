@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useSensor } from '../context/SensorContext';
 import { SensorSquare } from './SensorSquare';
 import {
@@ -8,12 +8,13 @@ import {
   MoveRight,
   Plus,
   Compass,
+  Crosshair,
 } from 'lucide-react';
 
 export const SensorTrack: React.FC = () => {
   const {
-    sensorRange,
-    setSensorRange,
+    totalMapTiles,
+    setTotalMapTiles,
     shiftTrack,
     visibleShips,
     selectedShipId,
@@ -21,23 +22,45 @@ export const SensorTrack: React.FC = () => {
     moveShip,
     playerShip,
     viewMode,
+    activeZoneIndices,
+    playerSensorRange,
   } = useSensor();
 
   const isGm = viewMode === 'gm';
   const scrollRef = useRef<HTMLDivElement>(null);
+  const playerSquareRef = useRef<HTMLDivElement>(null);
 
   const playerSquare = playerShip ? playerShip.square : null;
 
+  // Auto-center on Player Ship when in Player View or when triggered
+  const centerOnPlayer = () => {
+    if (playerSquareRef.current) {
+      playerSquareRef.current.scrollIntoView({
+        behavior: 'smooth',
+        inline: 'center',
+        block: 'nearest',
+      });
+    }
+  };
+
+  useEffect(() => {
+    // Center on mount and when viewMode changes to player
+    const timer = setTimeout(() => {
+      centerOnPlayer();
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [viewMode, playerSquare]);
+
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
-      const offset = direction === 'left' ? -220 : 220;
+      const offset = direction === 'left' ? -240 : 240;
       scrollRef.current.scrollBy({ left: offset, behavior: 'smooth' });
     }
   };
 
-  // Group ships by their zone square
+  // Group visible ships by their zone square
   const shipsByZone: { [zone: number]: typeof visibleShips } = {};
-  for (let i = 0; i < sensorRange; i++) {
+  for (let i = 0; i < totalMapTiles; i++) {
     shipsByZone[i] = [];
   }
   visibleShips.forEach((ship) => {
@@ -70,28 +93,36 @@ export const SensorTrack: React.FC = () => {
         ref={scrollRef}
         className="w-full overflow-x-auto pb-4 pt-1 px-4 sm:px-6 flex items-center gap-3 scroll-smooth no-scrollbar"
       >
-        {Array.from({ length: sensorRange }, (_, i) => i).map((zoneIndex) => (
-          <SensorSquare
-            key={zoneIndex}
-            zoneIndex={zoneIndex}
-            playerSquare={playerSquare}
-            ships={shipsByZone[zoneIndex] || []}
-            selectedShipId={selectedShipId}
-            isGm={isGm}
-            onSelectShip={(id) => selectShip(id)}
-            onMoveSelectedHere={(targetZone) => {
-              if (selectedShipId) {
-                moveShip(selectedShipId, targetZone);
-              }
-            }}
-          />
-        ))}
+        {activeZoneIndices.map((zoneIndex) => {
+          const isPlayerZone = playerSquare === zoneIndex;
+          return (
+            <div
+              key={zoneIndex}
+              ref={isPlayerZone ? playerSquareRef : undefined}
+              className="flex-shrink-0"
+            >
+              <SensorSquare
+                zoneIndex={zoneIndex}
+                playerSquare={playerSquare}
+                ships={shipsByZone[zoneIndex] || []}
+                selectedShipId={selectedShipId}
+                isGm={isGm}
+                onSelectShip={(id) => selectShip(id)}
+                onMoveSelectedHere={(targetZone) => {
+                  if (selectedShipId) {
+                    moveShip(selectedShipId, targetZone);
+                  }
+                }}
+              />
+            </div>
+          );
+        })}
 
         {/* GM "+ Expand Map" button at the end of track */}
         {isGm && (
           <button
-            onClick={() => setSensorRange(sensorRange + 1)}
-            className="min-w-[70px] h-[230px] sm:h-[260px] flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-800 hover:border-cyan-500/60 bg-void-950/40 hover:bg-cyan-950/20 text-slate-500 hover:text-cyan-400 font-mono text-xs transition-all p-2"
+            onClick={() => setTotalMapTiles(totalMapTiles + 1)}
+            className="min-w-[70px] h-[230px] sm:h-[260px] flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-800 hover:border-cyan-500/60 bg-void-950/40 hover:bg-cyan-950/20 text-slate-500 hover:text-cyan-400 font-mono text-xs transition-all p-2 flex-shrink-0"
             title="Add zone to map track"
           >
             <Plus className="w-6 h-6 mb-1" />
@@ -102,15 +133,29 @@ export const SensorTrack: React.FC = () => {
         )}
       </div>
 
-      {/* GM Track Shifter & Navigation Info */}
+      {/* Track Telemetry Bar & Controls */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-6 text-xs text-slate-400 font-mono mt-1">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-1.5 text-cyan-400">
             <Compass className="w-3.5 h-3.5" />
-            <span>Relative Sensor Scope: {sensorRange} Zones</span>
+            <span>
+              {isGm
+                ? `Encounter Scope: ${totalMapTiles} Total Zones`
+                : `Sensor Range: ${playerSensorRange} Zones (Showing ${activeZoneIndices.length} Detected Zones)`}
+            </span>
           </div>
 
-          {/* GM Shift Map Controls (to spawn new zones as ships travel!) */}
+          {/* Center on Ship button */}
+          <button
+            onClick={centerOnPlayer}
+            className="flex items-center gap-1 px-2 py-0.5 rounded bg-void-900 hover:bg-void-800 border border-slate-800 text-[11px] text-cyan-300 hover:text-cyan-200 transition-colors"
+            title="Center track on player ship"
+          >
+            <Crosshair className="w-3 h-3 text-cyan-400" />
+            <span>Center on Ship</span>
+          </button>
+
+          {/* GM Shift Map Controls */}
           {isGm && (
             <div className="flex items-center gap-1 bg-void-900 border border-slate-800 rounded-lg px-2 py-0.5 text-[11px]">
               <span className="text-slate-500 mr-1">Shift Map:</span>
