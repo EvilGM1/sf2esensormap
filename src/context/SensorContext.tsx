@@ -1,5 +1,20 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { Starship, ViewMode, ShipSize, Faction } from '../types/sensor';
+import {
+  FrameId,
+  PlayerStarshipConfig,
+  InstalledBattleStation,
+  StationUpgrade,
+  SavedShipProfile,
+  RoomBackupPayload,
+} from '../types/starshipSheet';
+import {
+  FRAME_DEFINITIONS,
+  getFrameStats,
+  createDefaultPlayerStarship,
+  createDefaultStationsForFrame,
+  getAvailableUpgradeSlots,
+} from '../data/starshipData';
 import { soundManager } from '../utils/audio';
 import { tableSync, SyncPayload } from '../utils/sync';
 
@@ -43,6 +58,25 @@ interface SensorContextType {
   loadSampleEncounter: () => void;
   visibleShips: Starship[];
   activeZoneIndices: number[]; // Zones currently visible based on mode and sensor range
+
+  // Starship Character Sheet & Cockpit Console
+  shipConfig: PlayerStarshipConfig;
+  setShipFrame: (frameId: FrameId) => void;
+  updateShipName: (name: string) => void;
+  setStationInSlot: (slotIndex: number, station: InstalledBattleStation) => void;
+  clearStationSlot: (slotIndex: number) => void;
+  installUpgradeInSlot: (slotIndex: number, upgrade: StationUpgrade) => void;
+  removeUpgradeFromSlot: (slotIndex: number, upgradeId: string) => void;
+  adjustHullPoints: (delta: number) => void;
+  adjustShieldPoints: (delta: number) => void;
+
+  // Hangar Bay & Room Persistence
+  savedProfiles: SavedShipProfile[];
+  saveShipProfile: (name: string) => void;
+  loadShipProfile: (profileId: string) => void;
+  deleteShipProfile: (profileId: string) => void;
+  exportRoomData: () => string;
+  importRoomData: (json: string) => boolean;
 }
 
 const STORAGE_KEY = 'sf2e_sensor_map_state_v3';
@@ -216,6 +250,33 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [selectedShipId, setSelectedShipId] = useState<string | null>(null);
   const [audioEnabled, setAudioEnabled] = useState<boolean>(false);
 
+  // --- Starship Character Sheet & Cockpit Console State ---
+  const [shipConfig, setShipConfigState] = useState<PlayerStarshipConfig>(() => {
+    try {
+      const saved =
+        localStorage.getItem(`sf2e_ship_config_${roomId}`) ||
+        localStorage.getItem('sf2e_ship_config_default');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.frameId && Array.isArray(parsed.stations)) {
+          return parsed;
+        }
+      }
+    } catch (e) {}
+    return createDefaultPlayerStarship('explorer', shipLevel);
+  });
+
+  const [savedProfiles, setSavedProfiles] = useState<SavedShipProfile[]>(() => {
+    try {
+      const saved = localStorage.getItem('sf2e_ship_profiles_v1');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {}
+    return [];
+  });
+
   // Setup PeerJS Table Sync
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -235,6 +296,9 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           setShipLevelState(data.shipLevel);
         }
         setShips(data.ships);
+        if (data.shipConfig) {
+          setShipConfigState(data.shipConfig);
+        }
       });
     } else {
       // GM Host: initialize room
@@ -261,8 +325,9 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       defaultSensorRange,
       shipLevel,
       ships,
+      shipConfig,
     });
-  }, [totalMapTiles, playerSensorRange, defaultSensorRange, shipLevel, ships]);
+  }, [totalMapTiles, playerSensorRange, defaultSensorRange, shipLevel, ships, shipConfig]);
 
   // Sync to local storage
   useEffect(() => {
@@ -278,8 +343,11 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           ships,
         })
       );
+      localStorage.setItem(`sf2e_ship_config_${roomId}`, JSON.stringify(shipConfig));
+      localStorage.setItem('sf2e_ship_config_default', JSON.stringify(shipConfig));
+      localStorage.setItem('sf2e_ship_profiles_v1', JSON.stringify(savedProfiles));
     } catch (e) {}
-  }, [totalMapTiles, playerSensorRange, defaultSensorRange, shipLevel, gmPin, ships]);
+  }, [totalMapTiles, playerSensorRange, defaultSensorRange, shipLevel, gmPin, ships, shipConfig, savedProfiles, roomId]);
 
   const toggleAudio = () => {
     const next = !audioEnabled;
@@ -354,6 +422,13 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const setShipLevel = (lvl: number) => {
     const clamped = Math.max(1, Math.min(20, lvl));
     setShipLevelState(clamped);
+    const newStats = getFrameStats(shipConfig.frameId, clamped);
+    setShipConfigState((prev) => ({
+      ...prev,
+      level: clamped,
+      currentHp: Math.min(newStats.hp, Math.max(1, prev.currentHp)),
+      currentSp: Math.min(newStats.sp, prev.currentSp),
+    }));
     soundManager.playBeep(880, 0.04);
   };
 
@@ -456,6 +531,174 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     soundManager.playBeep(880, 0.04);
   };
 
+  // --- Starship Character Sheet & Cockpit Console Methods ---
+  const setShipFrame = (frameId: FrameId) => {
+    const baseInfo = FRAME_DEFINITIONS[frameId];
+    const newStations = createDefaultStationsForFrame(frameId);
+    const newStats = getFrameStats(frameId, shipLevel);
+    setShipConfigState((prev) => ({
+      ...prev,
+      frameId,
+      stations: newStations,
+      currentHp: newStats.hp,
+      currentSp: newStats.sp,
+    }));
+    setDefaultSensorRangeState(baseInfo.defaultSensorRange);
+    setPlayerSensorRangeState(baseInfo.defaultSensorRange);
+    soundManager.playRadarPulse();
+  };
+
+  const updateShipName = (name: string) => {
+    setShipConfigState((prev) => ({ ...prev, name }));
+    setShips((prev) =>
+      prev.map((s) => (s.faction === 'player' ? { ...s, name } : s))
+    );
+  };
+
+  const setStationInSlot = (slotIndex: number, station: InstalledBattleStation) => {
+    setShipConfigState((prev) => {
+      const nextStations = [...prev.stations];
+      nextStations[slotIndex] = { ...station, slotIndex };
+      return { ...prev, stations: nextStations };
+    });
+    soundManager.playBeep(920, 0.04);
+  };
+
+  const clearStationSlot = (slotIndex: number) => {
+    if (slotIndex < 2) return; // Cannot clear fixed frame stations
+    setShipConfigState((prev) => {
+      const nextStations = [...prev.stations];
+      nextStations[slotIndex] = {
+        id: `custom-bay-${slotIndex - 1}`,
+        slotIndex,
+        type: 'empty',
+        isFixed: false,
+        installedUpgrades: [],
+      };
+      return { ...prev, stations: nextStations };
+    });
+    soundManager.playBeep(520, 0.04);
+  };
+
+  const installUpgradeInSlot = (slotIndex: number, upgrade: StationUpgrade) => {
+    setShipConfigState((prev) => {
+      const nextStations = [...prev.stations];
+      const station = nextStations[slotIndex];
+      if (!station) return prev;
+      const maxSlots = getAvailableUpgradeSlots(prev.level);
+      if (station.installedUpgrades.length >= maxSlots) {
+        return prev;
+      }
+      if (station.installedUpgrades.some((u) => u.id === upgrade.id)) {
+        return prev;
+      }
+      nextStations[slotIndex] = {
+        ...station,
+        installedUpgrades: [...station.installedUpgrades, upgrade],
+      };
+      return { ...prev, stations: nextStations };
+    });
+    soundManager.playBeep(980, 0.04);
+  };
+
+  const removeUpgradeFromSlot = (slotIndex: number, upgradeId: string) => {
+    setShipConfigState((prev) => {
+      const nextStations = [...prev.stations];
+      const station = nextStations[slotIndex];
+      if (!station) return prev;
+      nextStations[slotIndex] = {
+        ...station,
+        installedUpgrades: station.installedUpgrades.filter((u) => u.id !== upgradeId),
+      };
+      return { ...prev, stations: nextStations };
+    });
+    soundManager.playBeep(500, 0.04);
+  };
+
+  const adjustHullPoints = (delta: number) => {
+    const stats = getFrameStats(shipConfig.frameId, shipLevel);
+    setShipConfigState((prev) => ({
+      ...prev,
+      currentHp: Math.max(0, Math.min(stats.hp, prev.currentHp + delta)),
+    }));
+    soundManager.playBeep(delta < 0 ? 320 : 840, 0.05);
+  };
+
+  const adjustShieldPoints = (delta: number) => {
+    const stats = getFrameStats(shipConfig.frameId, shipLevel);
+    setShipConfigState((prev) => ({
+      ...prev,
+      currentSp: Math.max(0, Math.min(stats.sp, prev.currentSp + delta)),
+    }));
+    soundManager.playBeep(delta < 0 ? 440 : 960, 0.05);
+  };
+
+  // --- Hangar Profiles & Room Backup Methods ---
+  const saveShipProfile = (name: string) => {
+    const newProfile: SavedShipProfile = {
+      id: `profile-${Date.now()}`,
+      name: name.trim() || `${shipConfig.name} (${FRAME_DEFINITIONS[shipConfig.frameId].name})`,
+      savedAt: new Date().toISOString(),
+      config: JSON.parse(JSON.stringify(shipConfig)),
+    };
+    setSavedProfiles((prev) => [newProfile, ...prev]);
+    soundManager.playRadarPulse();
+  };
+
+  const loadShipProfile = (profileId: string) => {
+    const found = savedProfiles.find((p) => p.id === profileId);
+    if (!found) return;
+    setShipConfigState(JSON.parse(JSON.stringify(found.config)));
+    setShipLevelState(found.config.level);
+    const baseInfo = FRAME_DEFINITIONS[found.config.frameId];
+    setDefaultSensorRangeState(baseInfo.defaultSensorRange);
+    setPlayerSensorRangeState(baseInfo.defaultSensorRange);
+    soundManager.playRadarPulse();
+  };
+
+  const deleteShipProfile = (profileId: string) => {
+    setSavedProfiles((prev) => prev.filter((p) => p.id !== profileId));
+  };
+
+  const exportRoomData = (): string => {
+    const payload: RoomBackupPayload = {
+      version: '1.2.0',
+      savedAt: new Date().toISOString(),
+      totalMapTiles,
+      playerSensorRange,
+      defaultSensorRange,
+      shipLevel,
+      shipConfig,
+      savedProfiles,
+    };
+    return JSON.stringify(payload, null, 2);
+  };
+
+  const importRoomData = (jsonStr: string): boolean => {
+    try {
+      const parsed = JSON.parse(jsonStr) as RoomBackupPayload;
+      if (parsed.totalMapTiles && parsed.shipConfig) {
+        setTotalMapTilesState(parsed.totalMapTiles);
+        setPlayerSensorRangeState(parsed.playerSensorRange);
+        if (typeof parsed.defaultSensorRange === 'number') {
+          setDefaultSensorRangeState(parsed.defaultSensorRange);
+        }
+        if (typeof parsed.shipLevel === 'number') {
+          setShipLevelState(parsed.shipLevel);
+        }
+        setShipConfigState(parsed.shipConfig);
+        if (Array.isArray(parsed.savedProfiles)) {
+          setSavedProfiles(parsed.savedProfiles);
+        }
+        soundManager.playRadarPulse();
+        return true;
+      }
+    } catch (e) {
+      console.error('Import error', e);
+    }
+    return false;
+  };
+
   const resetEncounter = () => {
     const center = Math.floor(totalMapTiles / 2);
     setShips([
@@ -556,6 +799,21 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         loadSampleEncounter,
         visibleShips,
         activeZoneIndices,
+        shipConfig,
+        setShipFrame,
+        updateShipName,
+        setStationInSlot,
+        clearStationSlot,
+        installUpgradeInSlot,
+        removeUpgradeFromSlot,
+        adjustHullPoints,
+        adjustShieldPoints,
+        savedProfiles,
+        saveShipProfile,
+        loadShipProfile,
+        deleteShipProfile,
+        exportRoomData,
+        importRoomData,
       }}
     >
       {children}

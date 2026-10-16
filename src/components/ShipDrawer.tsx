@@ -225,7 +225,7 @@ export const ShipDrawer: React.FC = () => {
                 /* Player view indicator for player ship */
                 <div className="flex items-center justify-center py-2 px-3 rounded-lg bg-void-800/50 border border-slate-800 text-slate-300 font-mono text-xs">
                   <Compass className="w-4 h-4 mr-1 text-cyan-400" />
-                  <span>Bearing: Track Origin (CORE 0)</span>
+                  <span>Position: Flagship Core (Zone 0)</span>
                 </div>
               )}
 

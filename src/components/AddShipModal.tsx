@@ -16,7 +16,7 @@ export const AddShipModal: React.FC<AddShipModalProps> = ({ isOpen, onClose }) =
   const [size, setSize] = useState<ShipSize>('medium');
   const [square, setSquare] = useState<number>(Math.floor(totalMapTiles / 2) + 2);
   const [heading, setHeading] = useState<Heading>('left');
-  const [hidden, setHidden] = useState<boolean>(false);
+  const [hidden, setHidden] = useState<boolean>(true); // Default to cloaked per GM preference
 
   if (!isOpen) return null;
 

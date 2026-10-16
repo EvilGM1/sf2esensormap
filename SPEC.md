@@ -129,35 +129,74 @@ Battle stations scale across grades (**Commercial Level 1**, **Tactical Level 2*
 
 ---
 
-## 4. Planned Future Features & Roadmap
+## 4. Starship Character Sheet & Tactical Cockpit Console (Implemented)
 
-### 4.1 Starship Character Sheet & Frame Console Integration
-To transform the app into an all-in-one Starship Companion, future releases will integrate a comprehensive **Starship Character Sheet & Interactive Console**:
+The app integrates an official **Starship Character Sheet & Cockpit Bridge Console** compliant with the *Starfinder Tech Core* and Archives of Nethys rulesets.
 
-1. **Official Frame Selection ([Archives of Nethys Frames](https://2e.aonsrd.com/tactical-starship-combat/frames))**:
-   - Support for official Starfinder 2e frames:
-     - **Bulwark**: Heavy defense, reinforced hull, ramming prow, high HP, lower Speed.
-     - **Explorer**: Balanced, superior sensor range, strong shield generation, versatile expansion bays.
-     - **Skirmisher**: Fast, high mobility, superior Speed, lighter armor.
-     - Additional size frames: Shuttle, Light Interceptor, Heavy Fighter, Corvette, Armed Transport, Cruiser, Battleship, Dreadnought.
-2. **Interactive Builder System ([Archives of Nethys Shipbuilder](https://2e.aonsrd.com/tactical-starship-combat/builder))**:
-   - Player-facing Shipbuilder module directly in the app.
-   - Selecting a Frame + Level automatically computes:
-     - **Speed** (number of zones moved per Boost Thrusters)
-     - **Armor Class (AC)** & **Reflex DC**
-     - **Hull Points (HP)** & **Shield Points (SP)**
-     - **Base Sensor Range**: Automatically initializes the player ship's baseline sensor range on the tactical track (GM override supported with Reset to Default).
-     - **Expansion Bays & Upgrades**: Dedicated bays for specialized scanners, cargo, weapons, medical bays, or drone hangars.
-3. **Cockpit HUD Character Sheet**:
-   - Replaces traditional paper sheets with a live starship telemetry console.
-   - Live HP and SP damage/shield generators with clickable repair and shield recharge buttons.
-   - Weapon mount cards displaying ranges (in zones), damage dice, and attack action shortcuts.
-4. **Crew Manning & Tactical Station Assignments**:
-   - Individual players claim specific battle stations (Pilot, Gunnery, Scanners, Generator, Drone, Magic Conduit).
-   - Once manned, the player's personal mobile interface presents custom buttons matching their station's actions for that combat turn.
+### 4.1 Official Frame Profiles & Level 1–20 Scaling
+- **Official Frames (Medium)**:
+  - **Bulwark**: Heavy hull armor, standard Generator, Pilot's Console with built-in *Ramming Prow*. Baseline Sensor Range: 5 Zones.
+  - **Explorer**: Balanced explorer, Pilot's Console, Generator with built-in *Pulse Shield*. Baseline Sensor Range: 6 Zones.
+  - **Skirmisher**: High speed, light hull, Generator, Pilot's Console with built-in *Rotational Thrusters*. Baseline Sensor Range: 4 Zones.
+- **Dynamic Level Scaling (Levels 1–20)**:
+  - Exact HP, SP, AC, Fortitude, Reflex, Will, and Speed progression tables from Archives of Nethys.
+  - Changing level or frame dynamically recalibrates the ship's stats and adjusts baseline sensor range.
+  - Vitals HUD displays interactive HP and SP meters with single-click damage / repair / shield adjustments.
 
-### 4.2 Automated Station Skill Rollers
-- Integrated dice roller for *Seek Starships*, *Evade*, *Generate Shields*, and *Target Lock* pulling from the crew member's skill proficiencies.
+### 4.2 Workstation Configuration & Frame Upgrades
+- **Fixed Frame Workstations (2 slots)**:
+  - Slot 0: Pilot's Console (Includes built-in frame upgrade: *Ramming Prow* for Bulwark, *Rotational Thrusters* for Skirmisher).
+  - Slot 1: Generator (Includes built-in *Pulse Shield* for Explorer).
+  - Built-in frame upgrades are free and do NOT consume station upgrade slots.
+- **Customizable Modular Bays (4 slots)**:
+  - Slots 2 through 5 can be configured into any available station type:
+    - **Gunnery**: Automatically prompts weapon selection with weapon stats, zone range, damage dice, and weapon traits (e.g., *Coilgun*, *Particle Beam*, *Flak Cannon*, *Heavy Laser Cannon*, *Missile Rack*, *Torpedo Launcher*).
+    - **Drone Console**: Prompts drone model selection with actions and stats (*Pyrotechnics Drone*, *Repair Drone*, *Scramble Drone*).
+    - **Generator**: Auxiliary power plant.
+    - **Scanners**: Dedicated electronic warfare and sensor suite.
+    - **Magic Console**: Arcane/divine conduit.
+  - Any customizable bay can be cleared back to an empty slot.
 
-### 4.3 Offline PWA Support
-- Service worker caching so the entire app and character sheet operate offline without internet at physical conventions or cabins.
+### 4.3 Station Upgrades by Level / Grade
+- Station upgrade slots scale strictly by ship level:
+  - **Level 1**: 0 upgrade slots
+  - **Levels 2–4**: 1 upgrade slot
+  - **Levels 5–10**: 2 upgrade slots
+  - **Levels 11–17**: 3 upgrade slots
+  - **Levels 18–20**: 4 upgrade slots
+- Upgrades are categorized by station (Pilot, Gunnery, Generator, Scanners, Drone, Magic) and level requirement:
+  - *Targeting Computer* (Gunnery, Lvl 1)
+  - *Hardened Circuits* (Scanners, Lvl 2)
+  - *Overcharge Capacitor* (Generator, Lvl 2)
+  - *Countermeasure Decoy* (Pilot, Lvl 3)
+  - *Automated Targeting System* (Gunnery, Lvl 4)
+  - *EMP Inverter* (Scanners, Lvl 5)
+  - *Emergency Thrusters* (Pilot, Lvl 5)
+  - *Shield Harmonic Amplifier* (Generator, Lvl 6)
+  - *Nanite Repair Matrix* (Drone, Lvl 6)
+  - *Quantum Telemetry Array* (Scanners, Lvl 8)
+  - *Spell-Amp Dynamo* (Magic, Lvl 8)
+  - *Dimensional Shift Drive* (Pilot, Lvl 10)
+  - *Tachyon Hyper-Scanner* (Scanners, Lvl 12)
+  - *Overdrive Core* (Generator, Lvl 14)
+  - *Singularity Beam Guide* (Gunnery, Lvl 16)
+  - *Aegis Matrix* (Generator, Lvl 18)
+- Installing an upgrade unlocks its granted action directly in the battle station panel.
+
+### 4.4 Hangar Bay & Room State Persistence
+- **Auto-Persistence**: Ship configuration, HP/SP status, and installed stations auto-save to browser `localStorage` keyed by Room ID.
+- **Hangar Bay Fleet**: Players can save named starship configurations ("Profiles") into a fleet roster and deploy any saved ship to the bridge in 1 click.
+- **GM Room Export & Import**: GMs can backup the entire room state (encounter map, total zones, sensor range, all ships, and player starship build) to a JSON file or copy to clipboard, enabling persistent campaign play across sessions.
+
+---
+
+## 5. Planned Future Enhancements & Roadmap
+
+### 5.1 Automated Station Skill Rollers
+- Integrated dice roller for *Seek Starships*, *Evade*, *Generate Shields*, and *Target Lock* pulling from crew member proficiencies.
+
+### 5.2 Crew Profile Linking
+- Multi-player crew login where individual players claim a specific station on the shared starship.
+
+### 5.3 Offline PWA Support
+- Service worker caching so the entire app, sensor map, and cockpit console operate offline without internet.

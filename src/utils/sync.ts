@@ -1,5 +1,6 @@
 import Peer, { DataConnection } from 'peerjs';
 import { Starship } from '../types/sensor';
+import { PlayerStarshipConfig } from '../types/starshipSheet';
 
 export interface SyncPayload {
   totalMapTiles: number;
@@ -7,6 +8,7 @@ export interface SyncPayload {
   defaultSensorRange?: number;
   shipLevel: number;
   ships: Starship[];
+  shipConfig?: PlayerStarshipConfig;
 }
 
 export type SyncCallback = (data: SyncPayload) => void;
