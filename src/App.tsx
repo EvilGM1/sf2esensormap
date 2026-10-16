@@ -6,12 +6,17 @@ import { ShipDrawer } from './components/ShipDrawer';
 import { AddShipModal } from './components/AddShipModal';
 import { QrConnectModal } from './components/QrConnectModal';
 import { RulesQuickRefModal } from './components/RulesQuickRefModal';
+import { GmPinModal } from './components/GmPinModal';
+import { BattleStationsModal } from './components/BattleStationsModal';
 import {
   RotateCcw,
   Eye,
   EyeOff,
   Plus,
   Radio,
+  Activity,
+  Layers,
+  Crosshair,
 } from 'lucide-react';
 
 const SensorMapDashboard: React.FC = () => {
@@ -22,11 +27,15 @@ const SensorMapDashboard: React.FC = () => {
     selectShip,
     flipShipHeading,
     toggleShipHidden,
+    playerShip,
+    setViewMode,
   } = useSensor();
 
   const [isAddShipOpen, setIsAddShipOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isRulesOpen, setIsRulesOpen] = useState(false);
+  const [isPinOpen, setIsPinOpen] = useState(false);
+  const [isStationsOpen, setIsStationsOpen] = useState(false);
 
   const isGm = viewMode === 'gm';
 
@@ -37,45 +46,88 @@ const SensorMapDashboard: React.FC = () => {
         onOpenAddShip={() => setIsAddShipOpen(true)}
         onOpenQr={() => setIsQrOpen(true)}
         onOpenRules={() => setIsRulesOpen(true)}
+        onOpenBattleStations={() => setIsStationsOpen(true)}
+        onPromptGmPin={() => setIsPinOpen(true)}
       />
 
-      {/* Mode Banner */}
-      {!isGm && (
-        <div className="bg-sky-950/60 border-b border-sky-500/30 px-4 py-1.5 flex items-center justify-center gap-2 text-sky-300 text-xs font-mono">
-          <Eye className="w-3.5 h-3.5 text-sky-400 animate-pulse" />
-          <span>
-            PLAYER SENSOR FEED ACTIVE — Cloaked & out-of-range vessels are masked.
-          </span>
+      {/* Mode Banner / Station Telemetry Readout */}
+      {!isGm ? (
+        <div className="bg-sky-950/60 border-b border-sky-500/30 px-4 py-1.5 flex items-center justify-between text-sky-300 text-xs font-mono">
+          <div className="flex items-center gap-2">
+            <Eye className="w-3.5 h-3.5 text-sky-400 animate-pulse" />
+            <span>PLAYER SENSOR CONSOLE — Cloaked contacts are masked by electronic warfare.</span>
+          </div>
+          <button
+            onClick={() => setIsStationsOpen(true)}
+            className="flex items-center gap-1 text-[11px] underline text-cyan-400 hover:text-cyan-300"
+          >
+            <Crosshair className="w-3 h-3" />
+            <span>Crew Stations</span>
+          </button>
+        </div>
+      ) : (
+        <div className="bg-void-900/60 border-b border-slate-800/80 px-4 py-1 flex items-center justify-between text-[11px] font-mono text-slate-400">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1 text-cyan-400">
+              <Activity className="w-3 h-3 animate-pulse" />
+              <span>STATION SCANNER: HIGH RES</span>
+            </span>
+            <span className="hidden sm:inline text-slate-500">|</span>
+            <span className="hidden sm:inline">
+              Core Bearing: 090° RELATIVE
+            </span>
+            <span className="hidden md:inline text-slate-500">|</span>
+            <span className="hidden md:inline">
+              Player Core: {playerShip ? `Zone ${playerShip.square}` : 'Unassigned'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-slate-500">Security Clearance:</span>
+            <span className="text-emerald-400 font-bold">GM AUTHORIZED</span>
+          </div>
         </div>
       )}
 
       {/* Main Tactical Display */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 flex flex-col gap-6">
         {/* Sensor Track Section */}
-        <section className="bg-void-900/60 border border-slate-800 rounded-2xl p-3 sm:p-5 shadow-2xl backdrop-blur">
-          <div className="flex items-center justify-between mb-3 px-2">
+        <section className="bg-void-900/70 border border-slate-800/90 rounded-2xl p-3 sm:p-5 shadow-2xl backdrop-blur relative overflow-hidden">
+          {/* Subtle radar scan background effect */}
+          <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full border border-cyan-500/10 pointer-events-none" />
+          <div className="absolute -right-10 -top-10 w-60 h-60 rounded-full border border-cyan-500/10 pointer-events-none" />
+
+          <div className="flex items-center justify-between mb-3 px-2 relative z-10">
             <div className="flex items-center gap-2">
               <Radio className="w-4 h-4 text-cyan-400" />
-              <h2 className="font-mono font-bold text-sm text-slate-200 uppercase tracking-wider">
-                Tactical Sensor Grid
+              <h2 className="font-mono font-bold text-xs sm:text-sm text-slate-200 uppercase tracking-wider">
+                Space Station Scanner Track
               </h2>
             </div>
-            <div className="text-xs font-mono text-slate-400">
-              Total Contacts: <strong className="text-cyan-400">{visibleShips.length}</strong>
+            <div className="text-xs font-mono text-slate-400 flex items-center gap-3">
+              <span>
+                Contacts: <strong className="text-cyan-400">{visibleShips.length}</strong>
+              </span>
+              <span className="hidden sm:inline text-slate-600">|</span>
+              <span className="hidden sm:inline text-[11px] text-slate-500">
+                Center: Player Ship
+              </span>
             </div>
           </div>
 
           {/* The Scrollable Line of Squares */}
-          <SensorTrack />
+          <div className="relative z-10">
+            <SensorTrack />
+          </div>
         </section>
 
         {/* Quick Vessel Roster (GM / Tactical Table) */}
         <section className="bg-void-900/40 border border-slate-800/80 rounded-2xl p-4 sm:p-5">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-mono font-bold text-xs sm:text-sm text-slate-300 uppercase tracking-wider flex items-center gap-2">
-              <span>Detected Contacts Roster</span>
+              <Layers className="w-4 h-4 text-slate-400" />
+              <span>Target Roster</span>
               <span className="text-[10px] text-slate-500 font-normal">
-                (Tap contact to inspect or select)
+                (Tap to select and issue maneuver)
               </span>
             </h3>
 
@@ -138,11 +190,14 @@ const SensorMapDashboard: React.FC = () => {
                             <EyeOff className="w-3 h-3 text-purple-400 flex-shrink-0" />
                           )}
                         </div>
-                        <div className="flex items-center gap-2 text-[10px] font-mono text-slate-400 mt-0.5">
+                        <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400 mt-0.5">
                           <span
                             className={`px-1.5 py-0.2 rounded border font-semibold uppercase ${getBadge()}`}
                           >
                             {ship.faction}
+                          </span>
+                          <span className="px-1 py-0.2 rounded bg-void-900 border border-slate-800 uppercase">
+                            {ship.size || 'medium'}
                           </span>
                           <span>Zone {ship.square}</span>
                         </div>
@@ -202,6 +257,20 @@ const SensorMapDashboard: React.FC = () => {
       <RulesQuickRefModal
         isOpen={isRulesOpen}
         onClose={() => setIsRulesOpen(false)}
+      />
+
+      <GmPinModal
+        isOpen={isPinOpen}
+        onClose={() => setIsPinOpen(false)}
+        onSuccess={() => {
+          setIsPinOpen(false);
+          setViewMode('gm');
+        }}
+      />
+
+      <BattleStationsModal
+        isOpen={isStationsOpen}
+        onClose={() => setIsStationsOpen(false)}
       />
     </div>
   );

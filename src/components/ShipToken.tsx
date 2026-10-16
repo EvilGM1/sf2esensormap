@@ -1,5 +1,5 @@
 import React from 'react';
-import { Starship } from '../types/sensor';
+import { Starship, ShipSize } from '../types/sensor';
 import { EyeOff } from 'lucide-react';
 
 interface ShipTokenProps {
@@ -26,46 +26,84 @@ export const ShipToken: React.FC<ShipTokenProps> = ({
         return {
           fill: '#38bdf8', // Blue
           stroke: '#bae6fd',
-          glow: 'rgba(56, 189, 248, 0.4)',
+          glow: 'rgba(56, 189, 248, 0.45)',
           badgeBg: 'bg-sky-500/20 text-sky-300 border-sky-500/40',
-          indicator: 'text-sky-400',
         };
       case 'ally':
         return {
           fill: '#22c55e', // Green
           stroke: '#86efac',
-          glow: 'rgba(34, 197, 94, 0.4)',
+          glow: 'rgba(34, 197, 94, 0.45)',
           badgeBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-          indicator: 'text-emerald-400',
         };
       case 'enemy':
         return {
           fill: '#ef4444', // Red
           stroke: '#fca5a5',
-          glow: 'rgba(239, 68, 68, 0.4)',
+          glow: 'rgba(239, 68, 68, 0.45)',
           badgeBg: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
-          indicator: 'text-rose-400',
         };
       case 'neutral':
         return {
           fill: '#eab308', // Yellow
           stroke: '#fde047',
-          glow: 'rgba(234, 179, 8, 0.4)',
+          glow: 'rgba(234, 179, 8, 0.45)',
           badgeBg: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
-          indicator: 'text-amber-400',
+        };
+    }
+  };
+
+  // Dimensional scaling based on ship size (Tiny to Colossal)
+  const getSizeStyles = (size: ShipSize = 'medium', isPlayer: boolean) => {
+    switch (size) {
+      case 'tiny':
+        return {
+          dim: isPlayer ? 'w-8 h-6' : 'w-5 h-5',
+          tag: 'TNY',
+        };
+      case 'small':
+        return {
+          dim: isPlayer ? 'w-10 h-7' : 'w-7 h-7',
+          tag: 'SML',
+        };
+      case 'medium':
+        return {
+          dim: isPlayer ? 'w-13 h-9 sm:w-14 sm:h-10' : 'w-8 h-8 sm:w-9 sm:h-9',
+          tag: 'MED',
+        };
+      case 'large':
+        return {
+          dim: isPlayer ? 'w-16 h-11 sm:w-18 sm:h-12' : 'w-10 h-10 sm:w-12 sm:h-12',
+          tag: 'LRG',
+        };
+      case 'huge':
+        return {
+          dim: isPlayer ? 'w-20 h-14 sm:w-22 sm:h-15' : 'w-13 h-13 sm:w-15 sm:h-15',
+          tag: 'HUG',
+        };
+      case 'gargantuan':
+        return {
+          dim: isPlayer ? 'w-24 h-16 sm:w-26 sm:h-18' : 'w-16 h-16 sm:w-18 sm:h-18',
+          tag: 'GAR',
+        };
+      case 'colossal':
+        return {
+          dim: isPlayer ? 'w-28 h-20 sm:w-30 sm:h-22' : 'w-20 h-20 sm:w-22 sm:h-22',
+          tag: 'COL',
         };
     }
   };
 
   const colors = getFactionColors();
   const isPlayer = ship.faction === 'player';
+  const sizeConfig = getSizeStyles(ship.size || 'medium', isPlayer);
 
   return (
     <div
       onClick={onClick}
       role="button"
       tabIndex={0}
-      title={`${ship.name} (${ship.faction.toUpperCase()}) - Facing ${ship.heading.toUpperCase()}${ship.hidden ? ' [CLOAKED]' : ''}`}
+      title={`${ship.name} [${sizeConfig.tag}] (${ship.faction.toUpperCase()}) - Facing ${ship.heading.toUpperCase()}${ship.hidden ? ' [CLOAKED]' : ''}`}
       className={`relative group cursor-pointer transition-all duration-200 flex flex-col items-center justify-center
         ${compact ? 'p-1' : 'p-1.5'}
         ${isSelected ? 'scale-105' : 'hover:scale-105 active:scale-95'}
@@ -76,61 +114,77 @@ export const ShipToken: React.FC<ShipTokenProps> = ({
       {isSelected && (
         <div 
           className="absolute -inset-1 rounded-xl bg-cyan-400/20 border border-cyan-400/80 animate-pulse pointer-events-none"
-          style={{ boxShadow: `0 0 12px ${colors.glow}` }}
+          style={{ boxShadow: `0 0 14px ${colors.glow}` }}
         />
       )}
 
       {/* SVG Ship Graphic */}
       <div className="relative flex items-center justify-center">
         {isPlayer ? (
-          /* Player Starship Chevron */
+          /* High-Tech Player Starship Chevron */
           <svg
-            className={`transition-transform duration-200 drop-shadow-md ${
-              compact ? 'w-10 h-8 sm:w-12 sm:h-9' : 'w-12 h-10 sm:w-14 sm:h-11'
-            } ${isFacingRight ? '' : 'rotate-180'}`}
+            className={`transition-all duration-200 drop-shadow-md ${sizeConfig.dim} ${
+              isFacingRight ? '' : 'rotate-180'
+            }`}
             viewBox="0 0 48 36"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
             {/* Outer Hull */}
             <path
-              d="M6 4L38 18L6 32L14 18L6 4Z"
+              d="M6 4L40 18L6 32L14 18L6 4Z"
               fill={colors.fill}
               stroke={colors.stroke}
               strokeWidth="2.5"
               strokeLinejoin="round"
             />
-            {/* Cockpit Core */}
+            {/* Wing Detail Panels */}
+            <path
+              d="M10 9L26 16L12 18Z"
+              fill="#0284c7"
+              opacity="0.8"
+            />
+            <path
+              d="M10 27L26 20L12 18Z"
+              fill="#0284c7"
+              opacity="0.8"
+            />
+            {/* Cockpit Canopy */}
             <polygon
-              points="14,18 26,18 20,13 14,15"
+              points="16,18 29,18 23,13 16,14.5"
               fill="#0369a1"
               stroke="#e0f2fe"
-              strokeWidth="1"
+              strokeWidth="1.2"
             />
-            {/* Thruster Glow (opposite of heading) */}
+            {/* Thruster Engine Glow */}
             <circle cx="10" cy="18" r="3.5" fill="#38bdf8" className="animate-ping opacity-60" />
             <circle cx="10" cy="18" r="2.5" fill="#ffffff" />
           </svg>
         ) : (
           /* NPC Starship Triangle */
           <svg
-            className={`transition-transform duration-200 drop-shadow-md ${
-              compact ? 'w-7 h-7 sm:w-8 sm:h-8' : 'w-8 h-8 sm:w-9 sm:h-9'
-            } ${isFacingRight ? '' : 'rotate-180'}`}
+            className={`transition-all duration-200 drop-shadow-md ${sizeConfig.dim} ${
+              isFacingRight ? '' : 'rotate-180'
+            }`}
             viewBox="0 0 32 32"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
             {/* Triangle Hull */}
             <polygon
-              points="4,6 28,16 4,26 9,16"
+              points="4,5 29,16 4,27 10,16"
               fill={colors.fill}
               stroke={colors.stroke}
-              strokeWidth="2"
+              strokeWidth="2.2"
               strokeLinejoin="round"
             />
-            {/* Central sensor dot */}
-            <circle cx="15" cy="16" r="2" fill="#ffffff" opacity="0.9" />
+            {/* Inner accent */}
+            <polygon
+              points="8,10 20,16 8,22 10,16"
+              fill="rgba(0,0,0,0.25)"
+            />
+            {/* Center radar signature dot */}
+            <circle cx="16" cy="16" r="2" fill="#ffffff" opacity="0.9" />
           </svg>
         )}
 
@@ -145,12 +199,14 @@ export const ShipToken: React.FC<ShipTokenProps> = ({
         )}
       </div>
 
-      {/* Label and Heading Indicator */}
-      <div className="flex items-center gap-1 mt-1 max-w-[85px] sm:max-w-[100px] pointer-events-none">
+      {/* Label, Heading & Size Tag */}
+      <div className="flex items-center gap-1 mt-1 max-w-[95px] sm:max-w-[120px] pointer-events-none">
         <span
-          className={`text-[10px] sm:text-xs font-semibold truncate px-1 rounded border leading-tight ${colors.badgeBg}`}
+          className={`text-[9px] sm:text-[11px] font-semibold truncate px-1 rounded border leading-tight flex items-center gap-1 ${colors.badgeBg}`}
         >
-          {isFacingRight ? '►' : '◄'} {ship.name}
+          <span>{isFacingRight ? '►' : '◄'}</span>
+          <span className="truncate">{ship.name}</span>
+          <span className="text-[8px] opacity-75 font-mono">[{sizeConfig.tag}]</span>
         </span>
       </div>
     </div>

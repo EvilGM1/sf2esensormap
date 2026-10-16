@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSensor } from '../context/SensorContext';
+import { ShipSize } from '../types/sensor';
 import {
   RotateCcw,
   ArrowLeft,
@@ -10,6 +11,7 @@ import {
   X,
   ShieldAlert,
   Compass,
+  Maximize2,
 } from 'lucide-react';
 
 export const ShipDrawer: React.FC = () => {
@@ -20,6 +22,7 @@ export const ShipDrawer: React.FC = () => {
     nudgeShip,
     moveShip,
     toggleShipHidden,
+    changeShipSize,
     removeShip,
     sensorRange,
     viewMode,
@@ -43,19 +46,32 @@ export const ShipDrawer: React.FC = () => {
     }
   };
 
+  const sizeOptions: { id: ShipSize; label: string }[] = [
+    { id: 'tiny', label: 'Tiny' },
+    { id: 'small', label: 'Small' },
+    { id: 'medium', label: 'Medium' },
+    { id: 'large', label: 'Large' },
+    { id: 'huge', label: 'Huge' },
+    { id: 'gargantuan', label: 'Gargantuan' },
+    { id: 'colossal', label: 'Colossal' },
+  ];
+
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 bg-void-900/95 border-t border-slate-700/80 backdrop-blur-md shadow-2xl p-4 sm:p-5 transition-transform duration-200">
       <div className="max-w-4xl mx-auto flex flex-col gap-3">
         {/* Top bar: Ship info & close button */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h3 className="font-bold text-base sm:text-lg text-slate-100 flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-bold text-base sm:text-lg text-slate-100 flex items-center gap-2 font-mono">
               <span>{selectedShip.name}</span>
             </h3>
             <span
               className={`text-xs px-2 py-0.5 rounded-full font-mono uppercase border ${getFactionBadge()}`}
             >
               {selectedShip.faction}
+            </span>
+            <span className="text-xs px-2 py-0.5 rounded-full font-mono uppercase bg-void-950 border border-slate-700 text-slate-300">
+              {selectedShip.size || 'medium'}
             </span>
             {selectedShip.hidden && isGm && (
               <span className="text-xs px-2 py-0.5 rounded-full font-mono bg-purple-900/60 text-purple-200 border border-purple-500/40 flex items-center gap-1">
@@ -93,7 +109,7 @@ export const ShipDrawer: React.FC = () => {
             className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-void-800 hover:bg-void-700 disabled:opacity-40 disabled:hover:bg-void-800 border border-slate-700 text-slate-200 font-mono text-sm transition-all active:scale-95 shadow"
           >
             <ArrowLeft className="w-4 h-4 text-slate-400" />
-            <span>Move Left (Zone {Math.max(0, selectedShip.square - 1)})</span>
+            <span>Move Left (Sq {Math.max(0, selectedShip.square - 1)})</span>
           </button>
 
           {/* Nudge Right Button */}
@@ -102,7 +118,7 @@ export const ShipDrawer: React.FC = () => {
             disabled={selectedShip.square >= sensorRange - 1}
             className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-void-800 hover:bg-void-700 disabled:opacity-40 disabled:hover:bg-void-800 border border-slate-700 text-slate-200 font-mono text-sm transition-all active:scale-95 shadow"
           >
-            <span>Move Right (Zone {Math.min(sensorRange - 1, selectedShip.square + 1)})</span>
+            <span>Move Right (Sq {Math.min(sensorRange - 1, selectedShip.square + 1)})</span>
             <ArrowRight className="w-4 h-4 text-slate-400" />
           </button>
 
@@ -136,10 +152,35 @@ export const ShipDrawer: React.FC = () => {
           )}
         </div>
 
-        {/* Secondary Bar: Zone Jump selector and Delete (if GM and not player ship) */}
+        {/* GM Size Selector Bar */}
+        {isGm && (
+          <div className="flex items-center gap-2 pt-1 border-t border-slate-800/80 font-mono text-xs">
+            <span className="text-slate-400 flex items-center gap-1">
+              <Maximize2 className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Ship Size:</span>
+            </span>
+            <div className="flex flex-wrap gap-1">
+              {sizeOptions.map((opt) => (
+                <button
+                  key={opt.id}
+                  onClick={() => changeShipSize(selectedShip.id, opt.id)}
+                  className={`px-2 py-0.5 rounded text-[11px] border transition-all ${
+                    (selectedShip.size || 'medium') === opt.id
+                      ? 'bg-cyan-950 border-cyan-400 text-cyan-300 font-bold'
+                      : 'bg-void-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Secondary Bar: Zone Jump selector and Delete */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-800/80 text-xs">
           <div className="flex items-center gap-2">
-            <span className="text-slate-400 font-mono">Jump to Zone:</span>
+            <span className="text-slate-400 font-mono">Jump to Square:</span>
             <select
               value={selectedShip.square}
               onChange={(e) => moveShip(selectedShip.id, parseInt(e.target.value, 10))}
@@ -157,11 +198,11 @@ export const ShipDrawer: React.FC = () => {
           <div className="flex items-center gap-1.5 text-amber-400/90 font-mono text-[11px]">
             <ShieldAlert className="w-3.5 h-3.5" />
             <span>
-              Off-Guard from {selectedShip.heading === 'right' ? 'LEFT (Rear)' : 'RIGHT (Rear)'}
+              Off-Guard from {selectedShip.heading === 'right' ? 'LEFT (Rear Flank)' : 'RIGHT (Rear Flank)'}
             </span>
           </div>
 
-          {/* Delete vessel (GM only, can delete any ship or player ship if desired) */}
+          {/* Delete vessel (GM only, non-player) */}
           {isGm && !isPlayerShip && (
             <button
               onClick={() => removeShip(selectedShip.id)}

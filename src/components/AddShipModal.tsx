@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSensor } from '../context/SensorContext';
-import { Faction, Heading } from '../types/sensor';
+import { Faction, Heading, ShipSize } from '../types/sensor';
 import { X, Plus, EyeOff } from 'lucide-react';
 
 interface AddShipModalProps {
@@ -13,7 +13,8 @@ export const AddShipModal: React.FC<AddShipModalProps> = ({ isOpen, onClose }) =
 
   const [name, setName] = useState('');
   const [faction, setFaction] = useState<Faction>('enemy');
-  const [square, setSquare] = useState<number>(Math.floor(sensorRange / 2));
+  const [size, setSize] = useState<ShipSize>('medium');
+  const [square, setSquare] = useState<number>(Math.floor(sensorRange / 2) + 2);
   const [heading, setHeading] = useState<Heading>('left');
   const [hidden, setHidden] = useState<boolean>(false);
 
@@ -25,6 +26,7 @@ export const AddShipModal: React.FC<AddShipModalProps> = ({ isOpen, onClose }) =
     addShip({
       name: finalName,
       faction,
+      size,
       square,
       heading,
       hidden,
@@ -33,19 +35,29 @@ export const AddShipModal: React.FC<AddShipModalProps> = ({ isOpen, onClose }) =
     onClose();
   };
 
-  const quickPresets = [
-    { label: 'Hostile Fighter', faction: 'enemy' as Faction, heading: 'left' as Heading },
-    { label: 'Hostile Cruiser', faction: 'enemy' as Faction, heading: 'left' as Heading },
-    { label: 'Allied Escort', faction: 'ally' as Faction, heading: 'right' as Heading },
-    { label: 'Neutral Freighter', faction: 'neutral' as Faction, heading: 'left' as Heading },
+  const quickPresets: { label: string; faction: Faction; size: ShipSize; heading: Heading }[] = [
+    { label: 'Hostile Interceptor', faction: 'enemy', size: 'small', heading: 'left' },
+    { label: 'Hostile Cruiser', faction: 'enemy', size: 'huge', heading: 'left' },
+    { label: 'Allied Escort', faction: 'ally', size: 'large', heading: 'right' },
+    { label: 'Neutral Freighter', faction: 'neutral', size: 'medium', heading: 'left' },
+  ];
+
+  const sizeOptions: { id: ShipSize; label: string }[] = [
+    { id: 'tiny', label: 'Tiny' },
+    { id: 'small', label: 'Small' },
+    { id: 'medium', label: 'Medium' },
+    { id: 'large', label: 'Large' },
+    { id: 'huge', label: 'Huge' },
+    { id: 'gargantuan', label: 'Gargantuan' },
+    { id: 'colossal', label: 'Colossal' },
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-void-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+      <div className="w-full max-w-md bg-void-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Modal Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-void-950">
-          <h3 className="font-bold text-slate-100 flex items-center gap-2">
+          <h3 className="font-bold text-slate-100 flex items-center gap-2 font-mono text-sm">
             <Plus className="w-4 h-4 text-cyan-400" />
             <span>Deploy Starship</span>
           </h3>
@@ -58,7 +70,7 @@ export const AddShipModal: React.FC<AddShipModalProps> = ({ isOpen, onClose }) =
         </div>
 
         {/* Modal Form */}
-        <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="p-5 overflow-y-auto flex flex-col gap-3.5">
           {/* Quick Preset Buttons */}
           <div>
             <label className="block text-xs font-mono text-slate-400 mb-1.5">
@@ -72,11 +84,12 @@ export const AddShipModal: React.FC<AddShipModalProps> = ({ isOpen, onClose }) =
                   onClick={() => {
                     setName(preset.label);
                     setFaction(preset.faction);
+                    setSize(preset.size);
                     setHeading(preset.heading);
                   }}
                   className="text-left py-1.5 px-2.5 rounded bg-void-800 hover:bg-void-700 border border-slate-700/80 text-xs font-mono text-slate-300 transition-colors"
                 >
-                  + {preset.label}
+                  + {preset.label} [{preset.size.substring(0, 3).toUpperCase()}]
                 </button>
               ))}
             </div>
@@ -97,6 +110,29 @@ export const AddShipModal: React.FC<AddShipModalProps> = ({ isOpen, onClose }) =
             />
           </div>
 
+          {/* Starship Size Selector */}
+          <div>
+            <label className="block text-xs font-mono text-slate-400 mb-1">
+              Starship Size Class
+            </label>
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-1">
+              {sizeOptions.map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setSize(opt.id)}
+                  className={`py-1.5 px-1 rounded border text-[11px] font-mono transition-all text-center ${
+                    size === opt.id
+                      ? 'bg-cyan-950 border-cyan-400 text-cyan-200 font-bold ring-1 ring-cyan-400'
+                      : 'bg-void-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Faction Selection */}
           <div>
             <label className="block text-xs font-mono text-slate-400 mb-1.5">
@@ -106,7 +142,7 @@ export const AddShipModal: React.FC<AddShipModalProps> = ({ isOpen, onClose }) =
               <button
                 type="button"
                 onClick={() => setFaction('enemy')}
-                className={`py-2 px-2 rounded-lg border font-mono text-xs font-bold transition-all ${
+                className={`py-2 px-1 rounded-lg border font-mono text-xs font-bold transition-all ${
                   faction === 'enemy'
                     ? 'bg-rose-950 border-rose-500 text-rose-300 ring-1 ring-rose-500'
                     : 'bg-void-950 border-slate-800 text-slate-400 hover:border-slate-700'
@@ -117,7 +153,7 @@ export const AddShipModal: React.FC<AddShipModalProps> = ({ isOpen, onClose }) =
               <button
                 type="button"
                 onClick={() => setFaction('ally')}
-                className={`py-2 px-2 rounded-lg border font-mono text-xs font-bold transition-all ${
+                className={`py-2 px-1 rounded-lg border font-mono text-xs font-bold transition-all ${
                   faction === 'ally'
                     ? 'bg-emerald-950 border-emerald-500 text-emerald-300 ring-1 ring-emerald-500'
                     : 'bg-void-950 border-slate-800 text-slate-400 hover:border-slate-700'
@@ -128,7 +164,7 @@ export const AddShipModal: React.FC<AddShipModalProps> = ({ isOpen, onClose }) =
               <button
                 type="button"
                 onClick={() => setFaction('neutral')}
-                className={`py-2 px-2 rounded-lg border font-mono text-xs font-bold transition-all ${
+                className={`py-2 px-1 rounded-lg border font-mono text-xs font-bold transition-all ${
                   faction === 'neutral'
                     ? 'bg-amber-950 border-amber-500 text-amber-300 ring-1 ring-amber-500'
                     : 'bg-void-950 border-slate-800 text-slate-400 hover:border-slate-700'
@@ -139,7 +175,7 @@ export const AddShipModal: React.FC<AddShipModalProps> = ({ isOpen, onClose }) =
               <button
                 type="button"
                 onClick={() => setFaction('player')}
-                className={`py-2 px-2 rounded-lg border font-mono text-xs font-bold transition-all ${
+                className={`py-2 px-1 rounded-lg border font-mono text-xs font-bold transition-all ${
                   faction === 'player'
                     ? 'bg-sky-950 border-sky-500 text-sky-300 ring-1 ring-sky-500'
                     : 'bg-void-950 border-slate-800 text-slate-400 hover:border-slate-700'

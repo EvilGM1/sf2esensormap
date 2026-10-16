@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { X, Copy, Check, Smartphone } from 'lucide-react';
+import { X, Copy, Check, Smartphone, ShieldCheck } from 'lucide-react';
+import { useSensor } from '../context/SensorContext';
 
 interface QrConnectModalProps {
   isOpen: boolean;
@@ -8,15 +9,23 @@ interface QrConnectModalProps {
 }
 
 export const QrConnectModal: React.FC<QrConnectModalProps> = ({ isOpen, onClose }) => {
+  const { gmPin } = useSensor();
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
-
-  const currentUrl = typeof window !== 'undefined' ? window.location.href : 'https://evilgm1.github.io/sf2esensormap/';
+  const [playerLockedUrl, setPlayerLockedUrl] = useState<string>('');
 
   useEffect(() => {
-    if (isOpen) {
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('view', 'player');
+      setPlayerLockedUrl(url.toString());
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen && playerLockedUrl) {
       QRCode.toDataURL(
-        currentUrl,
+        playerLockedUrl,
         {
           width: 256,
           margin: 1.5,
@@ -28,30 +37,28 @@ export const QrConnectModal: React.FC<QrConnectModalProps> = ({ isOpen, onClose 
         (err, url) => {
           if (!err) {
             setQrDataUrl(url);
-          } else {
-            console.error('Failed to generate QR code', err);
           }
         }
       );
     }
-  }, [isOpen, currentUrl]);
+  }, [isOpen, playerLockedUrl]);
 
   if (!isOpen) return null;
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(currentUrl);
+    navigator.clipboard.writeText(playerLockedUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
       <div className="w-full max-w-sm bg-void-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-center">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-void-950">
           <h3 className="font-bold text-slate-100 flex items-center gap-2 text-sm font-mono">
             <Smartphone className="w-4 h-4 text-cyan-400" />
-            <span>Connect Phones at Table</span>
+            <span>Connect Table Phones</span>
           </h3>
           <button
             onClick={onClose}
@@ -62,28 +69,28 @@ export const QrConnectModal: React.FC<QrConnectModalProps> = ({ isOpen, onClose 
         </div>
 
         {/* Content */}
-        <div className="p-6 flex flex-col items-center gap-4">
+        <div className="p-5 flex flex-col items-center gap-3.5">
           <p className="text-xs text-slate-300 font-mono">
-            Players can scan this QR code with their phone camera to open the Sensor Map directly at the table.
+            Scan with phone camera to open in <strong>Player Mode</strong> (Cloaked vessels masked).
           </p>
 
-          {/* QR Code Container */}
+          {/* QR Code */}
           <div className="p-3 bg-white rounded-xl shadow-lg border border-slate-700">
             {qrDataUrl ? (
-              <img src={qrDataUrl} alt="QR Code to connect" className="w-52 h-52 object-contain" />
+              <img src={qrDataUrl} alt="QR Code for player phone" className="w-48 h-48 object-contain" />
             ) : (
-              <div className="w-52 h-52 flex items-center justify-center text-slate-500 font-mono text-xs">
+              <div className="w-48 h-48 flex items-center justify-center text-slate-500 font-mono text-xs">
                 Generating QR...
               </div>
             )}
           </div>
 
-          {/* URL Box and Copy */}
+          {/* URL Box & Copy */}
           <div className="w-full flex items-center gap-1.5 p-2 bg-void-950 rounded-lg border border-slate-800 text-xs font-mono">
             <input
               type="text"
               readOnly
-              value={currentUrl}
+              value={playerLockedUrl}
               className="bg-transparent flex-1 text-slate-400 focus:outline-none truncate select-all"
             />
             <button
@@ -95,9 +102,15 @@ export const QrConnectModal: React.FC<QrConnectModalProps> = ({ isOpen, onClose 
             </button>
           </div>
 
-          <p className="text-[11px] text-slate-500 font-mono">
-            Tip: Switch to <strong>Player View</strong> on player devices for fog of war!
-          </p>
+          {/* Security Notice */}
+          <div className="flex items-center gap-2 p-2 rounded-lg bg-void-950 border border-slate-800 text-[11px] text-slate-400 font-mono text-left w-full">
+            <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+            <div>
+              <span>GM Mode is protected by your PIN (Default: </span>
+              <strong className="text-cyan-300">{gmPin}</strong>
+              <span>). Players cannot see cloaked ships without it!</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
