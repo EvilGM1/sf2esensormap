@@ -92,9 +92,11 @@ export const ShipDrawer: React.FC = () => {
         {/* Primary Controls Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {/* Flip Heading Button */}
+          {/* Change Heading Button (Turn) */}
           <button
             onClick={() => flipShipHeading(selectedShip.id)}
             className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-void-800 hover:bg-void-700 border border-slate-700 text-slate-200 font-mono text-sm transition-all active:scale-95 shadow"
+            title="Change Heading (Turn around)"
           >
             <RotateCcw className="w-4 h-4 text-cyan-400" />
             <span>
@@ -102,25 +104,42 @@ export const ShipDrawer: React.FC = () => {
             </span>
           </button>
 
-          {/* Nudge Left Button */}
+          {/* Boost Thrusters (Move Forward in Direction of Heading) */}
           <button
-            onClick={() => nudgeShip(selectedShip.id, 'left')}
-            disabled={selectedShip.square <= 0}
-            className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-void-800 hover:bg-void-700 disabled:opacity-40 disabled:hover:bg-void-800 border border-slate-700 text-slate-200 font-mono text-sm transition-all active:scale-95 shadow"
+            onClick={() => nudgeShip(selectedShip.id, selectedShip.heading === 'right' ? 'right' : 'left')}
+            disabled={
+              selectedShip.heading === 'right'
+                ? selectedShip.square >= totalMapTiles - 1
+                : selectedShip.square <= 0
+            }
+            className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-cyan-950/70 hover:bg-cyan-900 border border-cyan-500/50 text-cyan-200 font-mono text-sm transition-all active:scale-95 shadow disabled:opacity-40"
+            title="Boost Thrusters (Move 1 zone forward along heading)"
           >
-            <ArrowLeft className="w-4 h-4 text-slate-400" />
-            <span>Move Left (Sq {Math.max(0, selectedShip.square - 1)})</span>
+            {selectedShip.heading === 'left' ? <ArrowLeft className="w-4 h-4 text-cyan-400" /> : null}
+            <span>Boost Thrusters ({selectedShip.heading === 'right' ? 'Forward ►' : '◄ Forward'})</span>
+            {selectedShip.heading === 'right' ? <ArrowRight className="w-4 h-4 text-cyan-400" /> : null}
           </button>
 
-          {/* Nudge Right Button */}
-          <button
-            onClick={() => nudgeShip(selectedShip.id, 'right')}
-            disabled={selectedShip.square >= totalMapTiles - 1}
-            className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-void-800 hover:bg-void-700 disabled:opacity-40 disabled:hover:bg-void-800 border border-slate-700 text-slate-200 font-mono text-sm transition-all active:scale-95 shadow"
-          >
-            <span>Move Right (Sq {Math.min(totalMapTiles - 1, selectedShip.square + 1)})</span>
-            <ArrowRight className="w-4 h-4 text-slate-400" />
-          </button>
+          {/* GM Admin Reverse Nudge */}
+          {isGm ? (
+            <button
+              onClick={() => nudgeShip(selectedShip.id, selectedShip.heading === 'right' ? 'left' : 'right')}
+              disabled={
+                selectedShip.heading === 'right'
+                  ? selectedShip.square <= 0
+                  : selectedShip.square >= totalMapTiles - 1
+              }
+              className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg bg-void-800 hover:bg-void-700 disabled:opacity-30 border border-slate-700 text-slate-400 hover:text-slate-200 font-mono text-xs transition-all active:scale-95"
+              title="GM Administrative reposition: Nudge reverse"
+            >
+              <span>Nudge Astern (GM)</span>
+            </button>
+          ) : (
+            <div className="flex items-center justify-center py-2 px-3 rounded-lg bg-void-800/50 border border-slate-800 text-slate-400 font-mono text-xs">
+              <Compass className="w-4 h-4 mr-1 text-cyan-400" />
+              <span>Current Range: Zone {selectedShip.square}</span>
+            </div>
+          )}
 
           {/* Scanner Cloak / Hide Toggle (GM only) */}
           {isGm ? (
@@ -144,12 +163,7 @@ export const ShipDrawer: React.FC = () => {
                 </>
               )}
             </button>
-          ) : (
-            <div className="flex items-center justify-center py-2 px-3 rounded-lg bg-void-800/50 border border-slate-800 text-slate-400 font-mono text-xs">
-              <Compass className="w-4 h-4 mr-1 text-cyan-400" />
-              <span>Current: Zone {selectedShip.square}</span>
-            </div>
-          )}
+          ) : null}
         </div>
 
         {/* GM Size Selector Bar */}
@@ -180,7 +194,7 @@ export const ShipDrawer: React.FC = () => {
         {/* Secondary Bar: Zone Jump selector and Delete */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-800/80 text-xs">
           <div className="flex items-center gap-2">
-            <span className="text-slate-400 font-mono">Jump to Square:</span>
+            <span className="text-slate-400 font-mono">Jump to Zone:</span>
             <select
               value={selectedShip.square}
               onChange={(e) => moveShip(selectedShip.id, parseInt(e.target.value, 10))}

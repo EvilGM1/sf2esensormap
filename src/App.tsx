@@ -55,7 +55,7 @@ const SensorMapDashboard: React.FC = () => {
         <div className="bg-sky-950/60 border-b border-sky-500/30 px-4 py-1.5 flex items-center justify-between text-sky-300 text-xs font-mono">
           <div className="flex items-center gap-2">
             <Eye className="w-3.5 h-3.5 text-sky-400 animate-pulse" />
-            <span>PLAYER SENSOR CONSOLE — Cloaked contacts are masked by electronic warfare.</span>
+            <span>PLAYER SENSOR CONSOLE — Long-Range Sensors Active</span>
           </div>
           <button
             onClick={() => setIsStationsOpen(true)}

@@ -5,7 +5,9 @@ import { tableSync, SyncPayload } from '../utils/sync';
 
 interface SensorContextType {
   totalMapTiles: number; // Total encounter tiles on sensor map (GM controlled)
-  playerSensorRange: number; // Player ship's max sensor range (Player controlled)
+  playerSensorRange: number; // Player ship's max sensor range (GM controlled, 0 to 15)
+  shipLevel: number; // Player starship level (1 to 20)
+  setShipLevel: (level: number) => void;
   viewMode: ViewMode;
   gmPin: string;
   isGmAuthenticated: boolean;
@@ -129,18 +131,32 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return DEFAULT_MAP_TILES;
   });
 
-  // Player Ship's Sensor Range (Player controlled)
+  // Player Ship's Sensor Range (GM controlled, 0 to 15)
   const [playerSensorRange, setPlayerSensorRangeState] = useState<number>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (typeof parsed.playerSensorRange === 'number' && parsed.playerSensorRange >= 1) {
+        if (typeof parsed.playerSensorRange === 'number' && parsed.playerSensorRange >= 0) {
           return parsed.playerSensorRange;
         }
       }
     } catch (e) {}
     return DEFAULT_SENSOR_RANGE;
+  });
+
+  // Starship Level (1 to 20)
+  const [shipLevel, setShipLevelState] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed.shipLevel === 'number' && parsed.shipLevel >= 1) {
+          return parsed.shipLevel;
+        }
+      }
+    } catch (e) {}
+    return 1;
   });
 
   const [gmPin, setGmPinState] = useState<string>(() => {
@@ -194,6 +210,9 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       tableSync.initClient(roomParam, (data: SyncPayload) => {
         setTotalMapTilesState(data.totalMapTiles);
         setPlayerSensorRangeState(data.playerSensorRange);
+        if (typeof data.shipLevel === 'number') {
+          setShipLevelState(data.shipLevel);
+        }
         setShips(data.ships);
       });
     } else {
@@ -218,9 +237,10 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     tableSync.broadcastState({
       totalMapTiles,
       playerSensorRange,
+      shipLevel,
       ships,
     });
-  }, [totalMapTiles, playerSensorRange, ships]);
+  }, [totalMapTiles, playerSensorRange, shipLevel, ships]);
 
   // Sync to local storage
   useEffect(() => {
@@ -230,12 +250,13 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         JSON.stringify({
           totalMapTiles,
           playerSensorRange,
+          shipLevel,
           gmPin,
           ships,
         })
       );
     } catch (e) {}
-  }, [totalMapTiles, playerSensorRange, gmPin, ships]);
+  }, [totalMapTiles, playerSensorRange, shipLevel, gmPin, ships]);
 
   const toggleAudio = () => {
     const next = !audioEnabled;
@@ -292,9 +313,15 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const setPlayerSensorRange = (newRange: number) => {
-    const clamped = Math.max(1, Math.min(15, newRange));
+    const clamped = Math.max(0, Math.min(15, newRange));
     setPlayerSensorRangeState(clamped);
     soundManager.playBeep(840, 0.04);
+  };
+
+  const setShipLevel = (lvl: number) => {
+    const clamped = Math.max(1, Math.min(20, lvl));
+    setShipLevelState(clamped);
+    soundManager.playBeep(880, 0.04);
   };
 
   const shiftTrack = (direction: 'left' | 'right') => {
@@ -454,6 +481,8 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       value={{
         totalMapTiles,
         playerSensorRange,
+        shipLevel,
+        setShipLevel,
         viewMode,
         gmPin,
         isGmAuthenticated,

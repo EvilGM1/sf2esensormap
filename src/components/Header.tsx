@@ -126,45 +126,58 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* GM Controlled Total Map Tiles */}
+          {/* GM Controls: Total Zones and Player Sensor Range */}
           {isGm ? (
-            <div className="hidden lg:flex items-center gap-1 bg-void-900 border border-slate-800 rounded-lg px-2 py-1 text-xs font-mono">
-              <span className="text-slate-400">Total Tiles:</span>
-              <button
-                onClick={() => setTotalMapTiles(totalMapTiles - 1)}
-                disabled={totalMapTiles <= 5}
-                className="w-5 h-5 flex items-center justify-center rounded bg-void-950 hover:bg-slate-800 disabled:opacity-40 text-slate-300 font-bold border border-slate-800"
-              >
-                -
-              </button>
-              <span className="font-bold text-cyan-400 px-1">{totalMapTiles}</span>
-              <button
-                onClick={() => setTotalMapTiles(totalMapTiles + 1)}
-                disabled={totalMapTiles >= 40}
-                className="w-5 h-5 flex items-center justify-center rounded bg-void-950 hover:bg-slate-800 disabled:opacity-40 text-slate-300 font-bold border border-slate-800"
-              >
-                +
-              </button>
+            <div className="hidden lg:flex items-center gap-3">
+              {/* Total Zones */}
+              <div className="flex items-center gap-1 bg-void-900 border border-slate-800 rounded-lg px-2 py-1 text-xs font-mono">
+                <span className="text-slate-400">Total Zones:</span>
+                <button
+                  onClick={() => setTotalMapTiles(totalMapTiles - 1)}
+                  disabled={totalMapTiles <= 5}
+                  className="w-5 h-5 flex items-center justify-center rounded bg-void-950 hover:bg-slate-800 disabled:opacity-40 text-slate-300 font-bold border border-slate-800"
+                >
+                  -
+                </button>
+                <span className="font-bold text-cyan-400 px-1">{totalMapTiles}</span>
+                <button
+                  onClick={() => setTotalMapTiles(totalMapTiles + 1)}
+                  disabled={totalMapTiles >= 40}
+                  className="w-5 h-5 flex items-center justify-center rounded bg-void-950 hover:bg-slate-800 disabled:opacity-40 text-slate-300 font-bold border border-slate-800"
+                >
+                  +
+                </button>
+              </div>
+
+              {/* Player Sensor Range (GM Controlled, down to 0) */}
+              <div className="flex items-center gap-1 bg-void-900 border border-slate-800 rounded-lg px-2 py-1 text-xs font-mono">
+                <span className="text-slate-400">Player Sensor Rng:</span>
+                <button
+                  onClick={() => setPlayerSensorRange(playerSensorRange - 1)}
+                  disabled={playerSensorRange <= 0}
+                  className="w-5 h-5 flex items-center justify-center rounded bg-void-950 hover:bg-slate-800 disabled:opacity-40 text-slate-300 font-bold border border-slate-800"
+                >
+                  -
+                </button>
+                <span className={`font-bold px-1 ${playerSensorRange === 0 ? 'text-rose-400' : 'text-sky-400'}`}>
+                  {playerSensorRange === 0 ? '0 (BLIND)' : playerSensorRange}
+                </span>
+                <button
+                  onClick={() => setPlayerSensorRange(playerSensorRange + 1)}
+                  disabled={playerSensorRange >= 15}
+                  className="w-5 h-5 flex items-center justify-center rounded bg-void-950 hover:bg-slate-800 disabled:opacity-40 text-slate-300 font-bold border border-slate-800"
+                >
+                  +
+                </button>
+              </div>
             </div>
           ) : (
-            /* Player Controlled Sensor Range */
-            <div className="hidden md:flex items-center gap-1 bg-void-900 border border-slate-800 rounded-lg px-2.5 py-1 text-xs font-mono">
-              <span className="text-slate-400">My Sensor Range:</span>
-              <button
-                onClick={() => setPlayerSensorRange(playerSensorRange - 1)}
-                disabled={playerSensorRange <= 1}
-                className="w-5 h-5 flex items-center justify-center rounded bg-void-950 hover:bg-slate-800 disabled:opacity-40 text-slate-300 font-bold border border-slate-800"
-              >
-                -
-              </button>
-              <span className="font-bold text-sky-400 px-1">{playerSensorRange}</span>
-              <button
-                onClick={() => setPlayerSensorRange(playerSensorRange + 1)}
-                disabled={playerSensorRange >= 15}
-                className="w-5 h-5 flex items-center justify-center rounded bg-void-950 hover:bg-slate-800 disabled:opacity-40 text-slate-300 font-bold border border-slate-800"
-              >
-                +
-              </button>
+            /* Player View: Read-only sensor range readout */
+            <div className="hidden md:flex items-center gap-1.5 bg-void-900 border border-slate-800 rounded-lg px-2.5 py-1 text-xs font-mono">
+              <span className="text-slate-400">Sensor Range:</span>
+              <span className={`font-bold ${playerSensorRange === 0 ? 'text-rose-400' : 'text-sky-400'}`}>
+                {playerSensorRange === 0 ? '0 Zones (Offline)' : `${playerSensorRange} Zones`}
+              </span>
             </div>
           )}
 

@@ -216,14 +216,13 @@ export const ShipToken: React.FC<ShipTokenProps> = ({
         )}
       </div>
 
-      {/* Label, Heading & Size Tag */}
+      {/* Label and Heading Indicator */}
       <div className="flex items-center gap-1 mt-1 max-w-[120px] pointer-events-none">
         <span
           className={`text-[9px] sm:text-[10px] font-semibold truncate px-1 rounded border leading-tight flex items-center gap-1 ${colors.badgeBg}`}
         >
           <span>{isFacingRight ? '►' : '◄'}</span>
           <span className="truncate">{ship.name}</span>
-          <span className="text-[8px] opacity-80 font-mono">[{sizeConfig.tag}]</span>
         </span>
       </div>
     </div>

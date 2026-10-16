@@ -65,9 +65,15 @@ export const SensorSquare: React.FC<SensorSquareProps> = ({
           {getRelativeLabel()}
         </span>
 
-        <span className="text-[10px] text-slate-500 bg-void-950 px-1 py-0.5 rounded border border-slate-800">
-          Sq {zoneIndex}
-        </span>
+        {isGm ? (
+          <span className="text-[10px] text-slate-500 bg-void-950 px-1 py-0.5 rounded border border-slate-800">
+            Zone {zoneIndex}
+          </span>
+        ) : (
+          <span className="text-[10px] text-slate-500 font-mono">
+            {relativeDistance === 0 ? 'SHIP CORE' : relativeDistance! > 0 ? 'AHEAD' : 'AFT'}
+          </span>
+        )}
       </div>
 
       {/* Center: Starships placed in this square */}
@@ -119,7 +125,7 @@ export const SensorSquare: React.FC<SensorSquareProps> = ({
           <div className="w-full flex items-center justify-between text-[10px] text-slate-500 font-mono px-1">
             <span>{shipCount} {shipCount === 1 ? 'vessel' : 'vessels'}</span>
             <span className="opacity-60">
-              {relativeDistance === 0 ? 'Core' : `Rng ${Math.abs(relativeDistance ?? 0)}`}
+              {isGm ? `Zone ${zoneIndex}` : (relativeDistance === 0 ? 'Core Zone' : `Rng ${Math.abs(relativeDistance ?? 0)}`)}
             </span>
           </div>
         )}
