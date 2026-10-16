@@ -99,6 +99,15 @@ An interactive, mobile-optimized tactical **Sensor Map** for **Starfinder 2e *Te
 
 ---
 
-## 📄 License
+## 📄 Legal & Licensing
 
-MIT License. Starfinder 2e rules and terminology are property of Paizo Inc. and referenced under the Open Game License / ORC License.
+### Open Source License
+This software and source code is licensed under the [MIT License](./LICENSE).
+
+### Paizo Community Use Policy Notice
+This website and application uses trademarks and/or copyrights owned by Paizo Inc., used under Paizo's Community Use Policy ([paizo.com/communityuse](https://paizo.com/communityuse)). We are expressly prohibited from charging you to use or access this content. This application is not published, endorsed, or specifically approved by Paizo. For more information about Paizo Inc. and Paizo products, please visit [paizo.com](https://paizo.com).
+
+### Trademark & Rules Attribution (ORC / OGL)
+- **Starfinder**, **Starfinder Second Edition**, **Pathfinder**, and their respective logos are registered trademarks or trademarks of Paizo Inc.
+- Starship combat rules, battle station actions, starship frames, and mechanical systems are based on the *Starfinder Second Edition Tech Core* ruleset and used pursuant to the **Open RPG Creative (ORC) License** and/or the **Open Game License (OGL v1.0a)**.
+- All game mechanics are compatible with Starfinder 2e and are provided free for community and tabletop use.

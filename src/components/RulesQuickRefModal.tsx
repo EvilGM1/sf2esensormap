@@ -88,6 +88,19 @@ export const RulesQuickRefModal: React.FC<RulesQuickRefModalProps> = ({ isOpen, 
               </div>
             </div>
           </div>
+
+          {/* Section 5: Legal & Community Use */}
+          <div className="bg-void-950 p-3.5 rounded-xl border border-slate-800 space-y-2 text-[10px] text-slate-400">
+            <h4 className="font-bold text-slate-200 text-xs flex items-center gap-1.5">
+              <span>5. Legal & Paizo Community Use Policy</span>
+            </h4>
+            <p className="leading-relaxed">
+              This application uses trademarks and/or copyrights owned by Paizo Inc., used under Paizo&apos;s Community Use Policy (<a href="https://paizo.com/communityuse" target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline">paizo.com/communityuse</a>). We are expressly prohibited from charging you to use or access this content. This application is not published, endorsed, or specifically approved by Paizo. For more information about Paizo Inc. and Paizo products, please visit <a href="https://paizo.com" target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline">paizo.com</a>.
+            </p>
+            <p className="leading-relaxed text-slate-500">
+              Starfinder, Starfinder Second Edition, and Pathfinder are registered trademarks or trademarks of Paizo Inc. All rules mechanics are governed under the Open RPG Creative (ORC) License and/or Open Game License (OGL v1.0a).
+            </p>
+          </div>
         </div>
 
         {/* Footer */}

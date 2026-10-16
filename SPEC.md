@@ -204,3 +204,15 @@ The app integrates an official **Starship Character Sheet & Cockpit Bridge Conso
 
 ### 5.3 Offline PWA Support
 - Service worker caching so the entire app, sensor map, and cockpit console operate offline without internet.
+
+---
+
+## 6. Legal & Licensing Attribution
+
+### 6.1 Paizo Community Use Policy Notice
+This application uses trademarks and/or copyrights owned by Paizo Inc., used under Paizo's Community Use Policy ([paizo.com/communityuse](https://paizo.com/communityuse)). We are expressly prohibited from charging you to use or access this content. This application is not published, endorsed, or specifically approved by Paizo. For more information about Paizo Inc. and Paizo products, please visit [paizo.com](https://paizo.com).
+
+### 6.2 Trademark & Rules Attribution (ORC / OGL)
+- **Starfinder**, **Starfinder Second Edition**, **Pathfinder**, and their respective logos are registered trademarks or trademarks of Paizo Inc.
+- Starship combat rules, battle station actions, starship frames, and mechanical systems are based on the *Starfinder Second Edition Tech Core* ruleset and used pursuant to the **Open RPG Creative (ORC) License** and/or the **Open Game License (OGL v1.0a)**.
+- All game mechanics are compatible with Starfinder 2e and are provided free for community and tabletop use.
