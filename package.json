@@ -2,6 +2,7 @@
   "name": "sf2e-sensor-map",
   "private": true,
   "version": "1.0.0-uat",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",

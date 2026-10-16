@@ -105,7 +105,7 @@ An interactive, mobile-optimized tactical **Sensor Map** for **Starfinder 2e *Te
 This software and source code is licensed under the [MIT License](./LICENSE).
 
 ### Paizo Community Use Policy Notice
-This website and application uses trademarks and/or copyrights owned by Paizo Inc., used under Paizo's Community Use Policy ([paizo.com/communityuse](https://paizo.com/communityuse)). We are expressly prohibited from charging you to use or access this content. This application is not published, endorsed, or specifically approved by Paizo. For more information about Paizo Inc. and Paizo products, please visit [paizo.com](https://paizo.com).
+See the [NOTICE](./NOTICE) file. This website and application uses trademarks and/or copyrights owned by Paizo Inc., used under Paizo's Community Use Policy ([paizo.com/communityuse](https://paizo.com/communityuse)). We are expressly prohibited from charging you to use or access this content. This application is not published, endorsed, or specifically approved by Paizo. For more information about Paizo Inc. and Paizo products, please visit [paizo.com](https://paizo.com).
 
 ### Trademark & Rules Attribution (ORC / OGL)
 - **Starfinder**, **Starfinder Second Edition**, **Pathfinder**, and their respective logos are registered trademarks or trademarks of Paizo Inc.
