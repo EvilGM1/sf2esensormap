@@ -4,6 +4,7 @@ import { FRAME_DEFINITIONS, getFrameStats, getAvailableUpgradeSlots } from '../d
 import { FrameId } from '../types/starshipSheet';
 import { WorkstationConfigModal } from './WorkstationConfigModal';
 import { HangarProfilesModal } from './HangarProfilesModal';
+import { SpellRepositoryModal } from './SpellRepositoryModal';
 import {
   Shield,
   Heart,
@@ -22,6 +23,7 @@ import {
   Layers,
   Wrench,
   Bookmark,
+  BookOpen,
 } from 'lucide-react';
 
 interface StarshipConsoleProps {
@@ -49,6 +51,7 @@ export const StarshipConsole: React.FC<StarshipConsoleProps> = ({
   const [tempName, setTempName] = useState(shipConfig.name);
   const [activeSlotModal, setActiveSlotModal] = useState<number | null>(null);
   const [isHangarOpen, setIsHangarOpen] = useState(false);
+  const [isSpellRepoOpen, setIsSpellRepoOpen] = useState(false);
 
   const currentStats = getFrameStats(shipConfig.frameId, shipConfig.level);
   const frameInfo = FRAME_DEFINITIONS[shipConfig.frameId];
@@ -463,6 +466,42 @@ export const StarshipConsole: React.FC<StarshipConsoleProps> = ({
                         </div>
                       )}
 
+                      {/* Magic Conduit Spell Repository Card */}
+                      {station.type === 'magic' && (
+                        <div className="p-2 rounded bg-purple-950/30 border border-purple-500/40 text-[11px]">
+                          <div className="flex items-center justify-between font-bold text-purple-300 mb-1">
+                            <span className="flex items-center gap-1.5">
+                              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                              <span>Spell Repository</span>
+                            </span>
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-900/60 border border-purple-500/30 text-purple-200">
+                              4 Spells Loaded
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-1 mb-2 text-[10px] text-slate-300 font-mono">
+                            <div className="p-1 rounded bg-void-950 border border-purple-500/20 truncate" title="Cosmic Cannon (Cantrip 1)">
+                              ⚡ Cosmic Cannon
+                            </div>
+                            <div className="p-1 rounded bg-void-950 border border-purple-500/20 truncate" title="Cosmic Bombardment (Rank 1)">
+                              💥 Bombardment
+                            </div>
+                            <div className="p-1 rounded bg-void-950 border border-purple-500/20 truncate" title="Cosmic Fortification (Rank 1)">
+                              🛡️ Fortification
+                            </div>
+                            <div className="p-1 rounded bg-void-950 border border-purple-500/20 truncate" title="Cosmic Repairs (Rank 1)">
+                              💚 Repairs
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => setIsSpellRepoOpen(true)}
+                            className="w-full py-1 px-2 rounded bg-purple-900/50 hover:bg-purple-800/60 border border-purple-500/40 text-purple-200 text-[10px] font-bold flex items-center justify-center gap-1 transition-colors"
+                          >
+                            <BookOpen className="w-3 h-3 text-purple-300" />
+                            <span>View Spell Repository</span>
+                          </button>
+                        </div>
+                      )}
+
                       {/* Station Upgrades chips */}
                       <div className="flex flex-wrap gap-1 pt-1">
                         {station.installedUpgrades.map((u) => (
@@ -520,6 +559,12 @@ export const StarshipConsole: React.FC<StarshipConsoleProps> = ({
       <HangarProfilesModal
         isOpen={isHangarOpen}
         onClose={() => setIsHangarOpen(false)}
+      />
+
+      {/* Magic Conduit Spell Repository Modal */}
+      <SpellRepositoryModal
+        isOpen={isSpellRepoOpen}
+        onClose={() => setIsSpellRepoOpen(false)}
       />
     </section>
   );

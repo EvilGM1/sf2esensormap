@@ -14,6 +14,8 @@ import {
   ExternalLink,
   Lock,
 } from 'lucide-react';
+import { MAGIC_CONDUIT_SPELL_REPOSITORY } from '../data/starshipData';
+import { SpellRepositoryModal } from './SpellRepositoryModal';
 
 interface BattleStationsModalProps {
   isOpen: boolean;
@@ -293,6 +295,7 @@ export const BattleStationsModal: React.FC<BattleStationsModalProps> = ({
   // Player selects the station they are currently manning
   const [currentStation, setCurrentStation] = useState<BattleStationType>('pilot');
   const [showAllStations, setShowAllStations] = useState<boolean>(false);
+  const [isSpellRepoOpen, setIsSpellRepoOpen] = useState<boolean>(false);
 
   if (!isOpen) return null;
 
@@ -465,6 +468,69 @@ export const BattleStationsModal: React.FC<BattleStationsModalProps> = ({
                 <p className="text-slate-300 text-xs leading-relaxed">
                   {action.description}
                 </p>
+
+                {/* Special Integrated Spell Repository for Cast Starship Spell */}
+                {action.name === 'Cast Starship Spell' && (
+                  <div className="mt-2.5 pt-2.5 border-t border-purple-500/30">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                        <span>Spell Repository (Tech Core pg. 181):</span>
+                      </span>
+                      <button
+                        onClick={() => setIsSpellRepoOpen(true)}
+                        className="text-[10px] text-purple-300 underline hover:text-purple-200 font-bold"
+                      >
+                        Browse Full Repository
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {MAGIC_CONDUIT_SPELL_REPOSITORY.map((spell) => (
+                        <div
+                          key={spell.id}
+                          className="p-2.5 rounded-lg bg-purple-950/20 border border-purple-500/30 text-xs flex flex-col justify-between gap-1.5"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-bold text-slate-100">{spell.name}</span>
+                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-900/60 border border-purple-500/30 text-purple-200 font-semibold">
+                                {spell.isCantrip ? 'Cantrip 1' : `Rank ${spell.rank}`}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-cyan-300 font-semibold mb-1">
+                              Cost: {spell.cost} • Range: {spell.range}
+                            </div>
+                            <p className="text-[11px] text-slate-300 leading-relaxed mb-1 line-clamp-3">
+                              {spell.description}
+                            </p>
+                            {spell.heightened && (
+                              <p className="text-[10px] text-purple-300/90 font-medium">
+                                {spell.heightened}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="pt-1.5 border-t border-purple-500/20 flex flex-wrap gap-1">
+                            {spell.traits.slice(0, 3).map((t) => (
+                              <span
+                                key={t}
+                                className="text-[9px] px-1.5 py-0.2 rounded bg-void-950 border border-slate-800 text-slate-400"
+                              >
+                                {t}
+                              </span>
+                            ))}
+                            {spell.defense && (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-950/60 border border-rose-500/40 text-rose-300">
+                                Def: {spell.defense}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -495,6 +561,12 @@ export const BattleStationsModal: React.FC<BattleStationsModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Magic Conduit Spell Repository Modal */}
+      <SpellRepositoryModal
+        isOpen={isSpellRepoOpen}
+        onClose={() => setIsSpellRepoOpen(false)}
+      />
     </div>
   );
 };

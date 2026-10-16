@@ -154,7 +154,11 @@ The app integrates an official **Starship Character Sheet & Cockpit Bridge Conso
     - **Drone Console**: Prompts drone model selection with actions and stats (*Pyrotechnics Drone*, *Repair Drone*, *Scramble Drone*).
     - **Generator**: Auxiliary power plant.
     - **Scanners**: Dedicated electronic warfare and sensor suite.
-    - **Magic Console**: Arcane/divine conduit.
+    - **Magic Conduit**: Mystical focal array that integrates the official **Starship Spell Repository** (*Tech Core* pg. 181). Any spellcaster helming the conduit can cast these spells using their own spell slots (or cantrips) across Arcane, Divine, Occult, and Primal traditions:
+      - *Cosmic Cannon* (Cantrip 1 • [2-actions] • Spell attack vs AC • 2d4 force damage)
+      - *Cosmic Bombardment* (Rank 1 • 1 to 3 actions • Automatic hit • 1d4+1 force damage per missile, up to 3 missiles)
+      - *Cosmic Fortification* (Rank 1 • [1-action] • Restores 1d4+4 Shield Points)
+      - *Cosmic Repairs* (Rank 1 • [2-actions] • Healing • Restores 1d8+8 Hull Points)
   - Any customizable bay can be cleared back to an empty slot.
 
 ### 4.3 Station Upgrades by Level / Grade

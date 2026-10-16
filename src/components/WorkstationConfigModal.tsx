@@ -7,6 +7,7 @@ import {
 import {
   STARSHIP_WEAPONS,
   STARSHIP_DRONES,
+  MAGIC_CONDUIT_SPELL_REPOSITORY,
   getUpgradesForStation,
   getAvailableUpgradeSlots,
 } from '../data/starshipData';
@@ -321,6 +322,65 @@ export const WorkstationConfigModal: React.FC<WorkstationConfigModalProps> = ({
                                 {a}
                               </span>
                             ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Conditional Magic Conduit Spell Repository */}
+                {selectedType === 'magic' && (
+                  <div className="pt-3 border-t border-purple-500/30">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs text-purple-300 font-bold uppercase flex items-center gap-1.5">
+                        <Sparkles className="w-4 h-4 text-purple-400" />
+                        <span>Integrated Spell Repository (Tech Core pg. 181):</span>
+                      </label>
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-purple-950 border border-purple-500/40 text-purple-300 font-bold">
+                        4 Spells Loaded
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] text-slate-400 mb-3 leading-relaxed">
+                      Equipping a Magic Conduit integrates the starship spell repository. Any spellcaster on board can cast these spells by expending their own spell slots (or using cantrips).
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
+                      {MAGIC_CONDUIT_SPELL_REPOSITORY.map((spell) => (
+                        <div
+                          key={spell.id}
+                          className="p-3 rounded-lg border border-purple-500/30 bg-purple-950/20 text-xs flex flex-col justify-between gap-1.5"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-bold text-slate-100">{spell.name}</span>
+                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-900/60 border border-purple-500/30 text-purple-200">
+                                {spell.isCantrip ? 'Cantrip 1' : `Rank ${spell.rank}`}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-cyan-300 font-semibold mb-1">
+                              Cost: {spell.cost} • Range: {spell.range}
+                            </div>
+                            <p className="text-[11px] text-slate-300 leading-relaxed mb-1.5 line-clamp-3">
+                              {spell.description}
+                            </p>
+                          </div>
+
+                          <div className="pt-1.5 border-t border-purple-500/20 flex flex-wrap gap-1">
+                            {spell.traits.map((t) => (
+                              <span
+                                key={t}
+                                className="text-[9px] px-1.5 py-0.2 rounded bg-void-950 border border-slate-800 text-slate-400"
+                              >
+                                {t}
+                              </span>
+                            ))}
+                            {spell.defense && (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-950/60 border border-rose-500/40 text-rose-300">
+                                Def: {spell.defense}
+                              </span>
+                            )}
                           </div>
                         </div>
                       ))}

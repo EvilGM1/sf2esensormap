@@ -4,6 +4,7 @@ import {
   FrameLevelStats,
   StarshipWeapon,
   StarshipDrone,
+  StarshipSpell,
   StationUpgrade,
   InstalledBattleStation,
   PlayerStarshipConfig,
@@ -284,6 +285,72 @@ export const STARSHIP_DRONES: StarshipDrone[] = [
     description:
       'High-agility decoy platform broadcasting ECM jamming signatures and countermeasure flares to confuse hostile targeting sensors and disrupt incoming ordnance.',
     actionsGranted: ['Deploy Drone', 'Sensor Flare', 'Scramble Lock', 'Drone Block'],
+  },
+];
+
+// ---------------------------------------------------------------------------
+// 4.5 OFFICIAL MAGIC CONDUIT SPELL REPOSITORY (Tech Core pg. 181-182)
+// ---------------------------------------------------------------------------
+export const MAGIC_CONDUIT_SPELL_REPOSITORY: StarshipSpell[] = [
+  {
+    id: 'cosmic-cannon',
+    name: 'Cosmic Cannon',
+    rank: 1,
+    isCantrip: true,
+    cost: '2-actions',
+    traditions: ['Arcane', 'Divine', 'Occult', 'Primal'],
+    traits: ['Attack', 'Cantrip', 'Concentrate', 'Manipulate', 'Station'],
+    range: 'Sensor range',
+    target: '1 starship',
+    defense: 'AC',
+    description:
+      'You shape ambient planar and cosmic energies into a focused destructive projectile and unleash it at a hostile starship. Make a ranged spell attack roll against the target starship’s AC. On a hit, you deal 2d4 force damage. On a critical hit, you deal double damage.',
+    heightened: 'Heightened (+1): The damage increases by 1d4.',
+  },
+  {
+    id: 'cosmic-bombardment',
+    name: 'Cosmic Bombardment',
+    rank: 1,
+    isCantrip: false,
+    cost: '1 to 3 actions',
+    traditions: ['Arcane', 'Divine', 'Occult', 'Primal'],
+    traits: ['Concentrate', 'Force', 'Manipulate', 'Station'],
+    range: 'Sensor range',
+    target: '1 starship',
+    defense: 'None (Automatic Hit)',
+    description:
+      'You fire a guided dart of concentrated magical resonance that unerringly streaks toward a starship within your sensor range, automatically dealing 1d4+1 force damage. For each additional action you spend when Casting this Spell, you shoot an additional missile (up to 3 missiles for 3 actions). You can fire them at the same target or split them among different starships in sensor range.',
+    heightened: 'Heightened (+2): The damage of each missile increases by 1d4+1.',
+  },
+  {
+    id: 'cosmic-fortification',
+    name: 'Cosmic Fortification',
+    rank: 1,
+    isCantrip: false,
+    cost: '1-action',
+    traditions: ['Arcane', 'Divine', 'Occult', 'Primal'],
+    traits: ['Concentrate', 'Manipulate', 'Station'],
+    range: 'Sensor range',
+    target: '1 starship',
+    defense: 'None',
+    description:
+      'You channel abjuration energies to reinforce and recharge a starship’s protective defensive envelope. You restore 1d4+4 Shield Points (SP) to the target starship within your sensor range (including your own ship). This cannot increase a starship’s Shield Points above its maximum.',
+    heightened: 'Heightened (+1): The Shield Points restored increase by 1d4+4.',
+  },
+  {
+    id: 'cosmic-repairs',
+    name: 'Cosmic Repairs',
+    rank: 1,
+    isCantrip: false,
+    cost: '2-actions',
+    traditions: ['Arcane', 'Divine', 'Occult', 'Primal'],
+    traits: ['Concentrate', 'Healing', 'Manipulate', 'Station'],
+    range: 'Sensor range',
+    target: '1 starship',
+    defense: 'None',
+    description:
+      'You project restorative transmutative power through space directly into damaged bulkheads and frame superstructure. You restore 1d8+8 Hull Points (HP) to the target starship within your sensor range (including your own ship). This cannot increase a starship’s Hull Points above its maximum.',
+    heightened: 'Heightened (+1): The Hull Points restored increase by 1d8+8.',
   },
 ];
 

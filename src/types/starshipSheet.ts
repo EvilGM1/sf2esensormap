@@ -43,6 +43,21 @@ export interface StarshipDrone {
   actionsGranted: string[];
 }
 
+export interface StarshipSpell {
+  id: string;
+  name: string;
+  rank: number;
+  isCantrip: boolean;
+  cost: string; // e.g. "2-actions", "1 to 3 actions", "1-action"
+  traditions: string[]; // e.g. ["Arcane", "Divine", "Occult", "Primal"]
+  traits: string[]; // e.g. ["Attack", "Cantrip", "Concentrate", "Manipulate", "Station"]
+  range: string; // e.g. "Sensor range"
+  target: string; // e.g. "1 starship"
+  defense?: string; // e.g. "AC"
+  description: string;
+  heightened?: string;
+}
+
 export interface StationUpgrade {
   id: string;
   name: string;
